@@ -204,21 +204,18 @@ function mostrarTelaJogo() {
 
 function makeRPSChoice(escolha) {
   try {
+    console.log('🎮 Sua escolha RPS:', escolha);
     document.getElementById('rpsWaiting').classList.remove('hidden');
     document.getElementById('rpsChoices').classList.add('hidden');
 
-    const opcoes = ['rock', 'paper', 'scissors'];
-    const oponentEscolha = opcoes[Math.floor(Math.random() * 3)];
-
-    const resultado = determinarVencedorRPS(escolha, oponentEscolha);
-    const vencedor = resultado === 1 ? currentGame.playerId : (currentGame.opponentId || 'opponent');
-
-    mostrarResultadoRPS(escolha, oponentEscolha, resultado);
-
-    setTimeout(() => {
-      inicializarJogo(vencedor);
-      mostrarTelaJogo();
-    }, 2000);
+    // Emitir escolha via WebSocket para o oponente
+    window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'rps_choice', { choice: escolha });
+    
+    // Armazenar nossa escolha temporariamente
+    localStorage.setItem('rpsChoice', escolha);
+    localStorage.setItem('rpsChoiceTime', Date.now());
+    
+    console.log('⏳ Aguardando escolha do oponente...');
   } catch (error) {
     console.error('Erro ao fazer escolha RPS:', error);
   }
@@ -267,22 +264,28 @@ function mostrarResultadoRPS(sua, oponente, resultado) {
 
 function inicializarJogo(vencedorRPS) {
   const deckSelecionado = localStorage.getItem('playerDeck') || 'aquatico';
+  console.log('📚 Inicializando com deck:', deckSelecionado);
 
+  const deckCartas = DECKS[deckSelecionado]?.cards || DECKS['aquatico'].cards;
+  
   gameState = {
     hand: [
-      DECKS[deckSelecionado].cards[0],
-      DECKS[deckSelecionado].cards[1],
-      DECKS[deckSelecionado].cards[2],
-      DECKS[deckSelecionado].cards[3]
+      deckCartas[0],
+      deckCartas[1],
+      deckCartas[2],
+      deckCartas[3]
     ],
     field: [],
-    deck: DECKS[deckSelecionado].cards.slice(4),
+    deck: deckCartas.slice(4),
     banished: [],
     pressureLevel: 0
   };
 
   currentGame.currentTurn = vencedorRPS;
   console.log('🎮 Jogo iniciado! Começa:', vencedorRPS);
+  
+  // Emitir estado inicial do jogo
+  window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
 }
 
 // ========== RENDERIZAR JOGO ==========
@@ -302,6 +305,7 @@ function configurarDropZones() {
 }
 
 function abrirMenuCarta(card, zone, index) {
+  console.log('📋 Abrindo menu para carta:', card.name, 'Zona:', zone, 'Index:', index);
   // Criar modal com opções
   const modal = document.createElement('div');
   modal.style.cssText = `
@@ -431,9 +435,11 @@ function moverCarta(cardIndex, fromZone, toZone) {
   // Re-renderizar
   renderizarMaoJogador();
   renderizarCampoJogador();
+  renderizarCartasBanidas();
   atualizarInfoJogador();
   
-  // Emitir para o oponente
+  // Emitir para o oponente IMEDIATAMENTE
+  console.log('📤 Emitindo atualização de estado para oponente...');
   window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
 }
 
@@ -467,6 +473,23 @@ function renderizarCampoJogador() {
   });
   
   configurarDropZones();
+}
+
+function renderizarCampoOponente(estadoOponente) {
+  const container = document.getElementById('opponentField');
+  if (!container || !estadoOponente || !estadoOponente.field) return;
+
+  const slots = container.querySelectorAll('.field-slot');
+
+  slots.forEach((slot, index) => {
+    slot.innerHTML = '';
+    if (estadoOponente.field[index]) {
+      const card = estadoOponente.field[index];
+      const cardElement = criarElementoCarta(card, 'field', index);
+      cardElement.style.pointerEvents = 'none'; // Não permitir interação
+      slot.appendChild(cardElement);
+    }
+  });
 }
 
 function renderizarCartasBanidas() {
@@ -605,11 +628,33 @@ function prepararListenersWebSocket() {
   });
 
   window.API.onGameStateUpdate((data) => {
-    console.log('🔄 Estado atualizado');
+    console.log('🔄 Estado recebido do oponente:', data);
+    // Atualizar estado do oponente (não sobrescrever o nosso)
+    if (data.playerId !== currentGame.playerId) {
+      // Renderizar o campo do oponente com as cartas dele
+      renderizarCampoOponente(data.gameState);
+    }
   });
 
   window.API.onPlayerAction((data) => {
-    console.log('🎯 Ação do oponente:', data.action);
+    console.log('🎯 Ação do oponente:', data.action, data.details);
+    
+    // Se for escolha de RPS
+    if (data.action === 'rps_choice') {
+      const minhaEscolha = localStorage.getItem('rpsChoice');
+      if (minhaEscolha) {
+        console.log('🎮 Comparando RPS:', minhaEscolha, 'vs', data.details.choice);
+        const resultado = determinarVencedorRPS(minhaEscolha, data.details.choice);
+        const vencedor = resultado === 1 ? currentGame.playerId : currentGame.opponentId;
+        
+        mostrarResultadoRPS(minhaEscolha, data.details.choice, resultado);
+        
+        setTimeout(() => {
+          inicializarJogo(vencedor);
+          mostrarTelaJogo();
+        }, 3000);
+      }
+    }
   });
 
   window.API.onTurnChanged((data) => {
