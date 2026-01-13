@@ -250,6 +250,7 @@ window.API = {
   updateGameState,
   recordGameAction,
   deleteGame,
+  initSocket,
   onPlayerJoined,
   onGameStateUpdate,
   onPlayerAction,

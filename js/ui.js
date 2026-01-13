@@ -104,6 +104,9 @@ async function executarCriarSala() {
     const playerId = 'player_' + Date.now();
     console.log('🎮 Criando sala com deck:', selectedDeck);
 
+    // Inicializa o WebSocket ANTES de criar a sala
+    window.API.initSocket();
+
     const game = await window.API.createGame(playerId, selectedDeck);
 
     currentGame.gameId = game.gameId;
@@ -145,6 +148,9 @@ async function executarEntrarSala() {
     const playerId = 'player_' + Date.now();
     console.log('🎮 Entrando na sala:', roomCode);
 
+    // Inicializa o WebSocket ANTES de fazer o join
+    window.API.initSocket();
+    
     const game = await window.API.joinGame(roomCode, playerId, selectedDeck);
 
     currentGame.gameId = game.gameId;
@@ -159,6 +165,8 @@ async function executarEntrarSala() {
     localStorage.setItem('playerDeck', selectedDeck);
 
     prepararListenersWebSocket();
+    
+    // Mostra tela de RPS imediatamente
     mostrarTelaPedraoPapelTesoura();
 
     console.log('✅ Entrou na sala:', roomCode);
