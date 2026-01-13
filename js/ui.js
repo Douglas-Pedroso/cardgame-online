@@ -335,12 +335,13 @@ function configurarDropZone(containerId, zone) {
     
     try {
       const dados = JSON.parse(e.dataTransfer.getData('card'));
-      const {card, zone: fromZone, index} = dados;
+      const {cardId, zone: fromZone, cardName} = dados;
       
-      console.log(`🎰 Drop detectado: ${card.name} de ${fromZone} para ${zone}`);
+      console.log(`🎰 Drop detectado: ${cardName} (ID: ${cardId}) de ${fromZone} para ${zone}`);
       
       if (fromZone !== zone) {
-        moverCarta(index, fromZone, zone);
+        // 📌 Usar ID para encontrar e mover a carta
+        moverCartaPorId(cardId, fromZone, zone);
       }
     } catch (error) {
       console.error('❌ Erro ao fazer drop:', error);
@@ -487,6 +488,69 @@ function moverCarta(cardIndex, fromZone, toZone) {
   window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
 }
 
+// 📌 NOVA FUNÇÃO: Mover carta usando ID ao invés de índice (MAIS SEGURO)
+function moverCartaPorId(cardId, fromZone, toZone) {
+  if (fromZone === toZone) return;
+  
+  console.log(`📍 Movendo carta ID:${cardId} de ${fromZone} para ${toZone}`);
+  
+  let carta = null;
+  let foundIndex = -1;
+  
+  // Procurar a carta pelo ID
+  if (fromZone === 'hand') {
+    foundIndex = gameState.hand.findIndex(c => c.id === cardId);
+    if (foundIndex !== -1) {
+      carta = gameState.hand[foundIndex];
+      gameState.hand.splice(foundIndex, 1);
+    }
+  } else if (fromZone === 'field') {
+    foundIndex = gameState.field.findIndex(c => c.id === cardId);
+    if (foundIndex !== -1) {
+      carta = gameState.field[foundIndex];
+      gameState.field.splice(foundIndex, 1);
+    }
+  } else if (fromZone === 'banished') {
+    foundIndex = gameState.banished.findIndex(c => c.id === cardId);
+    if (foundIndex !== -1) {
+      carta = gameState.banished[foundIndex];
+      gameState.banished.splice(foundIndex, 1);
+    }
+  } else if (fromZone === 'deck') {
+    foundIndex = gameState.deck.findIndex(c => c.id === cardId);
+    if (foundIndex !== -1) {
+      carta = gameState.deck[foundIndex];
+      gameState.deck.splice(foundIndex, 1);
+    }
+  }
+  
+  if (!carta) {
+    console.error('❌ Carta com ID', cardId, 'não encontrada em', fromZone);
+    return;
+  }
+  
+  console.log('✅ Carta encontrada:', carta.name);
+  
+  // Adicionar para nova zona
+  if (toZone === 'hand') {
+    gameState.hand.push(carta);
+  } else if (toZone === 'field') {
+    gameState.field.push(carta);
+  } else if (toZone === 'banished') {
+    gameState.banished.push(carta);
+  }
+  
+  // Re-renderizar
+  renderizarMaoJogador();
+  renderizarCampoJogador();
+  renderizarCartasBanidas();
+  atualizarInfoJogador();
+  
+  // Emitir para o oponente IMEDIATAMENTE
+  console.log('📤 Emitindo atualização de estado para oponente...');
+  window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
+}
+
 function renderizarMaoJogador() {
   const container = document.getElementById('playerHand');
   configurarDropZone('playerHand', 'hand');
@@ -558,6 +622,10 @@ function criarElementoCarta(card, zone, index) {
   const div = document.createElement('div');
   div.className = 'card-in-game';
   
+  // 📌 Armazenar ID da carta como atributo (mais seguro que índice)
+  div.dataset.cardId = card.id;
+  div.dataset.cardZone = zone;
+  
   // Determinar qual deck a carta vem (baseado no gameState ou décks conhecidos)
   let deckName = 'aquatico'; // padrão
   for (let d in DECKS) {
@@ -594,6 +662,9 @@ function criarElementoCarta(card, zone, index) {
   
   // Clique para abrir menu de ações - usar addEventListener
   div.addEventListener('click', (e) => {
+    // 🛑 Não abrir menu se estiver arrastando
+    if (e.target.classList.contains('dragging')) return;
+    
     e.stopPropagation();
     console.log('📋 Clicou na carta:', card.name);
     abrirMenuCarta(card, zone, index);
@@ -601,15 +672,18 @@ function criarElementoCarta(card, zone, index) {
   
   // ===== DRAG AND DROP =====
   div.addEventListener('dragstart', (e) => {
-    console.log('🎰 Iniciando drag da carta:', card.name);
+    console.log('🎰 Iniciando drag da carta:', card.name, 'ID:', card.id);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('card', JSON.stringify({card, zone, index}));
+    // 📌 Armazenar ID da carta ao invés de índice
+    e.dataTransfer.setData('card', JSON.stringify({cardId: card.id, zone, cardName: card.name}));
     div.style.opacity = '0.5';
+    div.classList.add('dragging');
   });
   
   div.addEventListener('dragend', (e) => {
     console.log('✋ Finalizando drag');
     div.style.opacity = '1';
+    div.classList.remove('dragging');
   });
   
   // Criar imagem da carta
