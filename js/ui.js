@@ -47,6 +47,10 @@ function showJoinGame() {
   mostrarSelecaoDeck('join');
 }
 
+function joinGame() {
+  ejecutarEntrarSala();
+}
+
 // ========== SELEÇÃO DE DECK ==========
 
 function mostrarSelecaoDeck(tipo) {
@@ -127,13 +131,18 @@ async function executarCriarSala() {
 // ========== ENTRAR EM SALA ==========
 
 async function executarEntrarSala() {
+  const roomCodeInput = document.querySelector('#roomCode');
+  const roomCode = roomCodeInput ? roomCodeInput.value.trim().toUpperCase() : null;
+
+  if (!roomCode) {
+    alert('Digite o código da sala!');
+    return;
+  }
+
   if (!selectedDeck) {
     alert('Selecione um deck!');
     return;
   }
-
-  const roomCode = prompt('Digite o código da sala:');
-  if (!roomCode) return;
 
   try {
     const playerId = 'player_' + Date.now();
