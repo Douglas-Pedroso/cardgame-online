@@ -266,8 +266,12 @@ function mostrarResultadoRPS(sua, oponente, resultado) {
 // ========== INICIALIZAR JOGO ==========
 
 function inicializarJogo(vencedorRPS) {
-  const deckSelecionado = localStorage.getItem('playerDeck') || 'aquatico';
-  console.log('📚 Inicializando com deck:', deckSelecionado);
+  // ⚠️ IMPORTANTE: Usar a variável selectedDeck que foi definida ao clicar no botão
+  // Isso garante que cada jogador mantém sua própria seleção
+  const deckSelecionado = selectedDeck || localStorage.getItem('playerDeck') || 'aquatico';
+  console.log('📚 Inicializando jogo com deck:', deckSelecionado);
+  console.log('🔍 selectedDeck (variável global):', selectedDeck);
+  console.log('🔍 playerDeck (localStorage):', localStorage.getItem('playerDeck'));
 
   const deckCartas = DECKS[deckSelecionado]?.cards || DECKS['aquatico'].cards;
   
@@ -281,11 +285,13 @@ function inicializarJogo(vencedorRPS) {
     field: [],
     deck: deckCartas.slice(4),
     banished: [],
-    pressureLevel: 0
+    pressureLevel: 0,
+    deckName: deckSelecionado  // 📌 Guardar qual deck está sendo usado
   };
 
   currentGame.currentTurn = vencedorRPS;
   console.log('🎮 Jogo iniciado! Começa:', vencedorRPS);
+  console.log('📊 Estado: Mão=' + gameState.hand.length + ', Deck=' + gameState.deck.length + ', Campo=' + gameState.field.length);
   
   // Emitir estado inicial do jogo
   window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
@@ -303,8 +309,43 @@ function renderizarJogo() {
   console.log('🎮 Jogo renderizado');
 }
 
-function configurarDropZones() {
-  // Não precisa mais de drop zones, usamos clique + modal agora
+function configurarDropZone(containerId, zone) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    container.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
+    container.style.borderWidth = '2px';
+    container.style.borderStyle = 'dashed';
+  });
+  
+  container.addEventListener('dragleave', () => {
+    container.style.backgroundColor = '';
+    container.style.borderWidth = '';
+    container.style.borderStyle = '';
+  });
+  
+  container.addEventListener('drop', (e) => {
+    e.preventDefault();
+    container.style.backgroundColor = '';
+    container.style.borderWidth = '';
+    container.style.borderStyle = '';
+    
+    try {
+      const dados = JSON.parse(e.dataTransfer.getData('card'));
+      const {card, zone: fromZone, index} = dados;
+      
+      console.log(`🎰 Drop detectado: ${card.name} de ${fromZone} para ${zone}`);
+      
+      if (fromZone !== zone) {
+        moverCarta(index, fromZone, zone);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao fazer drop:', error);
+    }
+  });
 }
 
 function abrirMenuCarta(card, zone, index) {
@@ -448,6 +489,7 @@ function moverCarta(cardIndex, fromZone, toZone) {
 
 function renderizarMaoJogador() {
   const container = document.getElementById('playerHand');
+  configurarDropZone('playerHand', 'hand');
   if (!container) return;
 
   container.innerHTML = '';
@@ -456,12 +498,11 @@ function renderizarMaoJogador() {
     const cardElement = criarElementoCarta(card, 'hand', index);
     container.appendChild(cardElement);
   });
-  
-  configurarDropZones();
 }
 
 function renderizarCampoJogador() {
   const container = document.getElementById('playerField');
+  configurarDropZone('playerField', 'field');
   if (!container) return;
 
   const slots = container.querySelectorAll('.field-slot');
@@ -474,8 +515,6 @@ function renderizarCampoJogador() {
       slot.appendChild(cardElement);
     }
   });
-  
-  configurarDropZones();
 }
 
 function renderizarCampoOponente(estadoOponente) {
@@ -497,6 +536,7 @@ function renderizarCampoOponente(estadoOponente) {
 
 function renderizarCartasBanidas() {
   const container = document.getElementById('playerBanished');
+  configurarDropZone('playerBanished', 'banished');
   if (!container) return;
 
   container.innerHTML = '';
@@ -537,7 +577,7 @@ function criarElementoCarta(card, zone, index) {
     border: 2px solid #333;
     border-radius: 8px;
     overflow: hidden;
-    cursor: pointer;
+    cursor: move;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -547,6 +587,8 @@ function criarElementoCarta(card, zone, index) {
     transition: transform 0.2s;
   `;
   
+  div.draggable = true;
+  
   div.onmouseover = () => div.style.transform = 'scale(1.05)';
   div.onmouseout = () => div.style.transform = 'scale(1)';
   
@@ -555,6 +597,19 @@ function criarElementoCarta(card, zone, index) {
     e.stopPropagation();
     console.log('📋 Clicou na carta:', card.name);
     abrirMenuCarta(card, zone, index);
+  });
+  
+  // ===== DRAG AND DROP =====
+  div.addEventListener('dragstart', (e) => {
+    console.log('🎰 Iniciando drag da carta:', card.name);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('card', JSON.stringify({card, zone, index}));
+    div.style.opacity = '0.5';
+  });
+  
+  div.addEventListener('dragend', (e) => {
+    console.log('✋ Finalizando drag');
+    div.style.opacity = '1';
   });
   
   // Criar imagem da carta
