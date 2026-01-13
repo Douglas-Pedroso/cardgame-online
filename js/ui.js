@@ -290,9 +290,86 @@ function inicializarJogo(vencedorRPS) {
 function renderizarJogo() {
   renderizarMaoJogador();
   renderizarCampoJogador();
+  renderizarCartasBanidas();
   atualizarInfoJogador();
+  configurarDropZones();
 
   console.log('🎮 Jogo renderizado');
+}
+
+function configurarDropZones() {
+  const zonas = [
+    { id: 'playerField', zone: 'field' },
+    { id: 'playerHand', zone: 'hand' },
+    { id: 'playerBanished', zone: 'banished' }
+  ];
+  
+  zonas.forEach(zona => {
+    const elemento = document.getElementById(zona.id);
+    if (elemento) {
+      elemento.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        elemento.style.backgroundColor = 'rgba(100, 200, 100, 0.3)';
+        elemento.style.borderRadius = '8px';
+      });
+      
+      elemento.addEventListener('dragleave', (e) => {
+        elemento.style.backgroundColor = '';
+      });
+      
+      elemento.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elemento.style.backgroundColor = '';
+        
+        const cardIndex = parseInt(e.dataTransfer.getData('cardIndex'));
+        const fromZone = e.dataTransfer.getData('fromZone');
+        
+        moverCarta(cardIndex, fromZone, zona.zone);
+      });
+    }
+  });
+}
+
+function moverCarta(cardIndex, fromZone, toZone) {
+  if (fromZone === toZone) return;
+  
+  console.log(`📍 Movendo carta ${cardIndex} de ${fromZone} para ${toZone}`);
+  
+  // Pegar a carta
+  let carta = null;
+  if (fromZone === 'hand') {
+    carta = gameState.hand[cardIndex];
+    gameState.hand.splice(cardIndex, 1);
+  } else if (fromZone === 'field') {
+    carta = gameState.field[cardIndex];
+    gameState.field.splice(cardIndex, 1);
+  } else if (fromZone === 'banished') {
+    carta = gameState.banished[cardIndex];
+    gameState.banished.splice(cardIndex, 1);
+  } else if (fromZone === 'deck') {
+    carta = gameState.deck[cardIndex];
+    gameState.deck.splice(cardIndex, 1);
+  }
+  
+  if (!carta) return;
+  
+  // Adicionar para nova zona
+  if (toZone === 'hand') {
+    gameState.hand.push(carta);
+  } else if (toZone === 'field') {
+    gameState.field.push(carta);
+  } else if (toZone === 'banished') {
+    gameState.banished.push(carta);
+  }
+  
+  // Re-renderizar
+  renderizarMaoJogador();
+  renderizarCampoJogador();
+  atualizarInfoJogador();
+  
+  // Emitir para o oponente
+  window.API.emitGameStateUpdate(currentGame.roomCode, currentGame.playerId, gameState);
 }
 
 function renderizarMaoJogador() {
@@ -305,6 +382,8 @@ function renderizarMaoJogador() {
     const cardElement = criarElementoCarta(card, 'hand', index);
     container.appendChild(cardElement);
   });
+  
+  configurarDropZones();
 }
 
 function renderizarCampoJogador() {
@@ -321,27 +400,107 @@ function renderizarCampoJogador() {
       slot.appendChild(cardElement);
     }
   });
+  
+  configurarDropZones();
+}
+
+function renderizarCartasBanidas() {
+  const container = document.getElementById('playerBanished');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  gameState.banished.forEach((card, index) => {
+    const cardElement = criarElementoCarta(card, 'banished', index);
+    cardElement.style.width = '80px';
+    cardElement.style.height = '110px';
+    container.appendChild(cardElement);
+  });
+  
+  const countElement = document.getElementById('playerBanishedCount');
+  if (countElement) {
+    countElement.textContent = gameState.banished.length;
+  }
 }
 
 function criarElementoCarta(card, zone, index) {
   const div = document.createElement('div');
   div.className = 'card-in-game';
+  
+  // Determinar qual deck a carta vem (baseado no gameState ou décks conhecidos)
+  let deckName = 'aquatico'; // padrão
+  for (let d in DECKS) {
+    if (DECKS[d].cards.some(c => c.id === card.id)) {
+      deckName = d;
+      break;
+    }
+  }
+  
+  const imagePath = `assets/cards/${deckName}/${card.image.replace('.png', '')}.PNG`;
+  
   div.style.cssText = `
-    padding: 10px;
-    border: 1px solid #999;
-    border-radius: 5px;
-    background: #f9f9f9;
+    position: relative;
+    width: 120px;
+    height: 160px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
     cursor: move;
-    min-width: 80px;
-    text-align: center;
-    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background: #f0f0f0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
   `;
+  
+  div.onmouseover = () => div.style.transform = 'scale(1.05)';
+  div.onmouseout = () => div.style.transform = 'scale(1)';
+  
   div.draggable = true;
-  div.innerHTML = `
-    <div style="font-weight: bold;">${card.name}</div>
-    <div>💜 ${card.cost}</div>
-    <div>⚔️ ${card.power}</div>
+  
+  // Criar imagem da carta
+  const img = document.createElement('img');
+  img.src = imagePath;
+  img.style.cssText = `
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
   `;
+  img.onerror = () => {
+    // Se a imagem não carregar, mostrar texto
+    img.style.display = 'none';
+    div.innerHTML = `
+      <div style="padding: 8px; text-align: center; font-weight: bold; font-size: 11px;">
+        <div>${card.name}</div>
+        <div>💜${card.cost}</div>
+        <div>⚔️${card.power}</div>
+      </div>
+    `;
+  };
+  
+  // Info da carta sobre a imagem
+  const info = document.createElement('div');
+  info.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 4px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bold;
+  `;
+  info.innerHTML = `💜${card.cost} ⚔️${card.power}`;
+  
+  div.appendChild(img);
+  div.appendChild(info);
 
   div.addEventListener('dragstart', (e) => {
     e.dataTransfer.effectAllowed = 'move';
