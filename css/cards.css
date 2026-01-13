@@ -1,0 +1,541 @@
+/* ===== TELA DO JOGO ===== */
+#gameScreen {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+/* ===== HEADER DO JOGO ===== */
+.game-header {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  border-bottom: 3px solid var(--color-secondary);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.player-name {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+.player-deck {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.game-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.turn-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--color-secondary);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+.turn-indicator.opponent-turn {
+  background: var(--color-warning);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.room-info {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+/* ===== ZONAS DO JOGO ===== */
+.game-zone {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.opponent-zone {
+  background: rgba(231, 76, 60, 0.1);
+  border-bottom: 2px solid rgba(231, 76, 60, 0.3);
+}
+
+.player-zone {
+  background: rgba(39, 174, 96, 0.1);
+  border-top: 2px solid rgba(39, 174, 96, 0.3);
+}
+
+.zone-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 15px;
+  min-height: 150px;
+}
+
+.zone {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 10px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.zone-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.zone-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  position: relative;
+}
+
+/* ===== CAMPO DE JOGO ===== */
+.field-zone {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: var(--shadow-md);
+}
+
+.field-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.field-slot {
+  aspect-ratio: 2/3;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.field-slot:hover {
+  background: rgba(52, 152, 219, 0.1);
+  border-color: var(--color-secondary);
+}
+
+.field-slot.drag-over {
+  background: rgba(52, 152, 219, 0.2);
+  border-color: var(--color-secondary);
+  border-style: solid;
+}
+
+/* ===== CARTAS ===== */
+.card {
+  width: 100px;
+  height: 140px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  cursor: grab;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #ddd;
+}
+
+.card:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+
+.card:active {
+  cursor: grabbing;
+}
+
+.card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.card-image {
+  width: 100%;
+  height: 70%;
+  object-fit: cover;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.card-info {
+  padding: 5px;
+  height: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-name {
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #7f8c8d;
+}
+
+.card-cost, .card-power {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.card-back {
+  width: 80px;
+  height: 120px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.card-back::before {
+  content: '🎴';
+  font-size: 3rem;
+}
+
+.card-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+  padding: 10px 15px;
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== ZONA DE MÃO ===== */
+.hand-zone .zone-content {
+  min-height: 140px;
+  padding: 10px;
+}
+
+/* ===== ZONA DO DECK ===== */
+.deck-zone {
+  cursor: pointer;
+}
+
+.deck-zone:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+.deck-zone .zone-content {
+  flex-direction: column;
+}
+
+/* ===== ZONA DE BANIDOS ===== */
+.banished-zone {
+  cursor: pointer;
+}
+
+.banished-zone:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===== CONTROLES DO JOGO ===== */
+.game-controls {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px 30px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+  border-top: 3px solid var(--color-secondary);
+}
+
+/* ===== LOG DE AÇÕES ===== */
+.action-log {
+  position: fixed;
+  right: -350px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 350px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 15px 0 0 15px;
+  box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.action-log.open {
+  right: 0;
+}
+
+.log-header {
+  background: var(--color-primary);
+  color: white;
+  padding: 15px 20px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 15px 0 0 0;
+}
+
+.btn-close-log {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.log-content {
+  padding: 15px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.log-entry {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: var(--color-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  border-left: 4px solid var(--color-secondary);
+}
+
+.log-entry.player {
+  border-left-color: var(--color-success);
+}
+
+.log-entry.opponent {
+  border-left-color: var(--color-danger);
+}
+
+.log-entry.system {
+  border-left-color: var(--color-warning);
+}
+
+.btn-toggle-log {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 10px 0 0 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  z-index: 999;
+}
+
+.btn-toggle-log:hover {
+  background: var(--color-secondary);
+}
+
+/* ===== MODAL DE VISUALIZAÇÃO ===== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  background: var(--color-primary);
+  color: white;
+  padding: 20px 30px;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-close-modal:hover {
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 30px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+}
+
+.modal-card {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.modal-card:hover {
+  transform: scale(1.05);
+}
+
+.modal-card-large {
+  width: 120px;
+  height: 168px;
+}
+
+.modal-card-large .card-image {
+  height: 75%;
+}
+
+.modal-card-large .card-info {
+  height: 25%;
+  padding: 8px;
+}
+
+.modal-card-large .card-name {
+  font-size: 0.8rem;
+}
+
+.modal-card-large .card-stats {
+  font-size: 0.75rem;
+}
+
+/* ===== RESPONSIVIDADE CARDS ===== */
+@media (max-width: 1200px) {
+  .zone-row {
+    grid-template-columns: 150px 1fr 150px;
+  }
+  
+  .field-slots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .card {
+    width: 80px;
+    height: 112px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .zone-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .field-slots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .game-controls {
+    flex-direction: column;
+  }
+  
+  .action-log {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .btn-toggle-log {
+    bottom: 20px;
+    top: auto;
+    right: 20px;
+    transform: none;
+  }
+}

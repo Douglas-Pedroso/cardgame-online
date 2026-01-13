@@ -1,0 +1,459 @@
+/* ===== VARIÁVEIS GLOBAIS ===== */
+:root {
+  --color-primary: #2c3e50;
+  --color-secondary: #3498db;
+  --color-success: #27ae60;
+  --color-danger: #e74c3c;
+  --color-warning: #f39c12;
+  --color-dark: #1a1a1a;
+  --color-light: #ecf0f1;
+  --color-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.2);
+  --transition: all 0.3s ease;
+}
+
+/* ===== RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: var(--color-bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== TELAS ===== */
+.screen {
+  display: none;
+  min-height: 100vh;
+  padding: 20px;
+  animation: fadeIn 0.5s ease;
+}
+
+.screen.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== MENU PRINCIPAL ===== */
+.menu-container {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.game-title {
+  font-family: 'Cinzel', serif;
+  font-size: 3rem;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.game-subtitle {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-bottom: 40px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.menu-info {
+  border-top: 2px solid var(--color-light);
+  padding-top: 20px;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.menu-info p {
+  margin: 5px 0;
+}
+
+/* ===== BOTÕES ===== */
+.btn {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: var(--shadow-md);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: var(--color-secondary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+}
+
+.btn-secondary {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #229954;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-action {
+  background: var(--color-warning);
+  color: white;
+}
+
+.btn-action:hover {
+  background: #d68910;
+}
+
+.btn-large {
+  padding: 20px 40px;
+  font-size: 1.3rem;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.btn-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: white;
+  color: var(--color-primary);
+  border: 2px solid var(--color-light);
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-back:hover {
+  background: var(--color-light);
+}
+
+/* ===== SETUP DE JOGO ===== */
+.setup-container {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: var(--shadow-lg);
+  max-width: 700px;
+  width: 100%;
+  position: relative;
+}
+
+.setup-container h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  color: var(--color-primary);
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.input-group {
+  margin-bottom: 25px;
+}
+
+.input-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid var(--color-light);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ===== SELEÇÃO DE DECK ===== */
+.deck-selection {
+  margin: 30px 0;
+}
+
+.deck-selection h3 {
+  font-family: 'Cinzel', serif;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.deck-option {
+  background: var(--color-light);
+  border: 3px solid transparent;
+  border-radius: 15px;
+  padding: 25px 15px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.deck-option:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.deck-option.selected {
+  border-color: var(--color-secondary);
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.deck-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.deck-name {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  margin-bottom: 5px;
+}
+
+.deck-count {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+/* ===== TELA DE ESPERA ===== */
+.waiting-container {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.spinner {
+  border: 5px solid var(--color-light);
+  border-top: 5px solid var(--color-secondary);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 30px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.room-code-display {
+  margin: 30px 0;
+}
+
+.room-code-display p {
+  color: #7f8c8d;
+  margin-bottom: 10px;
+}
+
+.code-box {
+  background: var(--color-light);
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: 5px;
+  margin-bottom: 15px;
+  font-family: 'Courier New', monospace;
+}
+
+.waiting-info {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+/* ===== PEDRA PAPEL TESOURA ===== */
+.rps-container {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+.rps-container h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 2.5rem;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.rps-subtitle {
+  color: #7f8c8d;
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+}
+
+.rps-choices {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.rps-btn {
+  background: white;
+  border: 3px solid var(--color-light);
+  border-radius: 15px;
+  padding: 30px 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.rps-btn:hover {
+  transform: translateY(-5px);
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-md);
+}
+
+.rps-btn i {
+  font-size: 4rem;
+  color: var(--color-secondary);
+}
+
+.rps-btn span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+}
+
+.rps-waiting, .rps-result {
+  margin-top: 30px;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.rps-waiting {
+  background: var(--color-light);
+}
+
+.spinner-small {
+  border: 3px solid var(--color-light);
+  border-top: 3px solid var(--color-secondary);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+.rps-result {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.rps-result.win {
+  background: rgba(39, 174, 96, 0.1);
+  color: var(--color-success);
+}
+
+.rps-result.lose {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-danger);
+}
+
+.rps-result.draw {
+  background: rgba(243, 156, 18, 0.1);
+  color: var(--color-warning);
+}
+
+/* ===== UTILITÁRIOS ===== */
+.hidden {
+  display: none !important;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+  .game-title {
+    font-size: 2rem;
+  }
+  
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .rps-choices {
+    flex-direction: column;
+  }
+  
+  .setup-container, .menu-container, .waiting-container, .rps-container {
+    padding: 30px 20px;
+  }
+}
