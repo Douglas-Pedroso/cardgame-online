@@ -47,8 +47,8 @@ function showJoinGame() {
   mostrarSelecaoDeck('join');
 }
 
-function joinGame() {
-  ejecutarEntrarSala();
+function joinGameButton() {
+  executarEntrarSala();
 }
 
 // ========== SELEÇÃO DE DECK ==========
