@@ -187,6 +187,9 @@ function mostrarTelaAguardandoOponente(roomCode) {
   document.getElementById('waitingScreen').classList.add('active');
 
   document.getElementById('roomCodeDisplay').textContent = roomCode;
+  
+  // 🔝 Scroll suave para o topo
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function mostrarTelaPedraoPapelTesoura() {
@@ -194,6 +197,9 @@ function mostrarTelaPedraoPapelTesoura() {
   document.getElementById('rpsScreen').classList.add('active');
   document.getElementById('rpsWaiting').classList.add('hidden');
   document.getElementById('rpsResult').classList.add('hidden');
+  
+  // 🔝 Scroll suave para o topo para que a tela RPS seja visível
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function mostrarTelaJogo() {
@@ -201,6 +207,9 @@ function mostrarTelaJogo() {
   document.getElementById('gameScreen').classList.add('active');
 
   renderizarJogo();
+  
+  // 🔝 Scroll suave para o topo
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ========== ROCK, PAPER, SCISSORS ==========
