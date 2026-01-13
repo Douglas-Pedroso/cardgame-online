@@ -1,0 +1,16 @@
+{
+  "name": "cardgame-online",
+  "version": "1.0.0",
+  "description": "Online multiplayer card game with real-time gameplay",
+  "main": "backend/src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "install": "cd backend && npm install",
+    "migrate": "cd backend && npm run migrate"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
