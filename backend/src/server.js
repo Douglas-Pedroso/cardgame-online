@@ -15,7 +15,7 @@ const server = http.createServer(app);
 // Configurar Socket.IO para comunicação em tempo real
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5500',
+    origin: ['https://douglas-pedroso.github.io', 'http://localhost:5500', 'http://localhost:3000'],
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -25,7 +25,7 @@ const io = new SocketIOServer(server, {
 app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5500',
+  origin: ['https://douglas-pedroso.github.io', 'http://localhost:5500', 'http://localhost:3000'],
   credentials: true
 }));
 
