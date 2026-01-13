@@ -2,7 +2,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000/api'
-  : 'https://cardgame-backend.render.com/api'; // Substitua com sua URL do Render
+  : 'https://cardgame-online-5sjw.onrender.com/api';
 
 // Socket.IO para comunicação em tempo real
 let socket = null;
@@ -13,7 +13,7 @@ const initSocket = () => {
   if (!socket) {
     const socketURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000'
-      : 'https://cardgame-backend.render.com';
+      : 'https://cardgame-online-5sjw.onrender.com';
 
     socket = io(socketURL, {
       reconnectionDelay: 1000,

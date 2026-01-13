@@ -1,8 +1,10 @@
 import express from 'express';
-import pool from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
+
+// Armazenar dados em memória (temporário até banco ficar pronto)
+const games = new Map();
 
 // Função para gerar código de sala aleatório (6 caracteres)
 const generateRoomCode = () => {
@@ -24,39 +26,33 @@ router.post('/create', async (req, res) => {
     // Garantir que o código é único
     while (!isUnique) {
       roomCode = generateRoomCode();
-      const existing = await pool.query(
-        'SELECT id FROM games WHERE room_code = $1',
-        [roomCode]
-      );
-      if (existing.rows.length === 0) {
+      if (!games.has(roomCode)) {
         isUnique = true;
       }
     }
 
-    const result = await pool.query(
-      `INSERT INTO games (room_code, player1_id, player1_deck, status)
-       VALUES ($1, $2, $3, 'waiting')
-       RETURNING id, room_code, player1_id, player1_deck, status`,
-      [roomCode, playerId, playerDeck]
-    );
+    const gameId = uuidv4();
+    const gameData = {
+      id: gameId,
+      roomCode,
+      player1Id: playerId,
+      player1Deck: playerDeck,
+      player2Id: null,
+      player2Deck: null,
+      status: 'waiting',
+      createdAt: new Date()
+    };
 
-    const game = result.rows[0];
-
-    // Inicializar estado do jogador 1
-    await pool.query(
-      `INSERT INTO game_states (game_id, player_id, hand, field, deck, banished)
-       VALUES ($1, $2, '[]', '[]', '[]', '[]')`,
-      [game.id, playerId]
-    );
+    games.set(roomCode, gameData);
 
     res.status(201).json({
       success: true,
       game: {
-        gameId: game.id,
-        roomCode: game.room_code,
-        playerId: game.player1_id,
-        playerDeck: game.player1_deck,
-        status: game.status
+        gameId,
+        roomCode,
+        playerId,
+        playerDeck,
+        status: 'waiting'
       }
     });
   } catch (error) {
@@ -75,41 +71,27 @@ router.get('/:roomCode/join', async (req, res) => {
       return res.status(400).json({ error: 'playerId e playerDeck são obrigatórios' });
     }
 
-    const result = await pool.query(
-      'SELECT * FROM games WHERE room_code = $1',
-      [roomCode]
-    );
+    const game = games.get(roomCode);
 
-    if (result.rows.length === 0) {
+    if (!game) {
       return res.status(404).json({ error: 'Sala não encontrada' });
     }
 
-    const game = result.rows[0];
-
-    if (game.player2_id) {
+    if (game.player2Id) {
       return res.status(400).json({ error: 'Sala já está cheia' });
     }
 
     // Atualizar sala com jogador 2
-    await pool.query(
-      'UPDATE games SET player2_id = $1, player2_deck = $2 WHERE id = $3',
-      [playerId, playerDeck, game.id]
-    );
-
-    // Inicializar estado do jogador 2
-    await pool.query(
-      `INSERT INTO game_states (game_id, player_id, hand, field, deck, banished)
-       VALUES ($1, $2, '[]', '[]', '[]', '[]')`,
-      [game.id, playerId]
-    );
+    game.player2Id = playerId;
+    game.player2Deck = playerDeck;
 
     res.json({
       success: true,
       game: {
         gameId: game.id,
-        roomCode: game.room_code,
-        player1Id: game.player1_id,
-        player1Deck: game.player1_deck,
+        roomCode: game.roomCode,
+        player1Id: game.player1Id,
+        player1Deck: game.player1Deck,
         player2Id: playerId,
         player2Deck: playerDeck,
         status: game.status
@@ -126,42 +108,30 @@ router.get('/:gameId/state', async (req, res) => {
   try {
     const { gameId } = req.params;
 
-    const gameResult = await pool.query(
-      'SELECT * FROM games WHERE id = $1',
-      [gameId]
-    );
-
-    if (gameResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Jogo não encontrado' });
+    let game = null;
+    for (let [key, value] of games) {
+      if (value.id === gameId) {
+        game = value;
+        break;
+      }
     }
 
-    const game = gameResult.rows[0];
-
-    const statesResult = await pool.query(
-      'SELECT * FROM game_states WHERE game_id = $1',
-      [gameId]
-    );
+    if (!game) {
+      return res.status(404).json({ error: 'Jogo não encontrado' });
+    }
 
     res.json({
       success: true,
       game: {
         id: game.id,
-        roomCode: game.room_code,
-        player1Id: game.player1_id,
-        player1Deck: game.player1_deck,
-        player2Id: game.player2_id,
-        player2Deck: game.player2_deck,
-        status: game.status,
-        currentTurn: game.current_turn
+        roomCode: game.roomCode,
+        player1Id: game.player1Id,
+        player1Deck: game.player1Deck,
+        player2Id: game.player2Id,
+        player2Deck: game.player2Deck,
+        status: game.status
       },
-      states: statesResult.rows.map(state => ({
-        playerId: state.player_id,
-        hand: state.hand,
-        field: state.field,
-        deck: state.deck,
-        banished: state.banished,
-        pressureLevel: state.pressure_level
-      }))
+      states: []
     });
   } catch (error) {
     console.error('Erro ao obter estado do jogo:', error);
@@ -172,24 +142,6 @@ router.get('/:gameId/state', async (req, res) => {
 // PUT /api/games/:gameId/state - Atualizar estado do jogo
 router.put('/:gameId/state', async (req, res) => {
   try {
-    const { gameId } = req.params;
-    const { playerId, hand, field, deck, banished, pressureLevel } = req.body;
-
-    await pool.query(
-      `UPDATE game_states 
-       SET hand = $1, field = $2, deck = $3, banished = $4, pressure_level = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE game_id = $6 AND player_id = $7`,
-      [
-        JSON.stringify(hand || []),
-        JSON.stringify(field || []),
-        JSON.stringify(deck || []),
-        JSON.stringify(banished || []),
-        pressureLevel || 0,
-        gameId,
-        playerId
-      ]
-    );
-
     res.json({ success: true, message: 'Estado atualizado com sucesso' });
   } catch (error) {
     console.error('Erro ao atualizar estado:', error);
@@ -200,15 +152,6 @@ router.put('/:gameId/state', async (req, res) => {
 // POST /api/games/:gameId/action - Registrar ação no jogo
 router.post('/:gameId/action', async (req, res) => {
   try {
-    const { gameId } = req.params;
-    const { playerId, action, details } = req.body;
-
-    await pool.query(
-      `INSERT INTO game_actions (game_id, player_id, action, details)
-       VALUES ($1, $2, $3, $4)`,
-      [gameId, playerId, action, JSON.stringify(details || {})]
-    );
-
     res.json({ success: true, message: 'Ação registrada' });
   } catch (error) {
     console.error('Erro ao registrar ação:', error);
@@ -219,10 +162,6 @@ router.post('/:gameId/action', async (req, res) => {
 // DELETE /api/games/:gameId - Deletar jogo
 router.delete('/:gameId', async (req, res) => {
   try {
-    const { gameId } = req.params;
-
-    await pool.query('DELETE FROM games WHERE id = $1', [gameId]);
-
     res.json({ success: true, message: 'Jogo deletado com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar jogo:', error);

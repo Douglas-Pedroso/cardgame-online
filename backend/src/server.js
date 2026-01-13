@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 import http from 'http';
 import gamesRouter from './routes/games.js';
-import pool from './config/database.js';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -138,15 +137,18 @@ io.on('connection', (socket) => {
   });
 });
 
-// Testar conexão com banco de dados
+// Testar conexão com banco de dados (opcional)
 const testDatabaseConnection = async () => {
   try {
+    console.log('📊 Tentando conectar ao banco de dados...');
+    const { default: pool } = await import('./config/database.js');
     const result = await pool.query('SELECT NOW()');
     console.log('✅ Conexão com banco de dados estabelecida');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao conectar com banco de dados:', error.message);
-    return false;
+    console.warn('⚠️  Aviso: Banco de dados não disponível:', error.message);
+    console.log('💡 O servidor funcionará sem banco de dados por enquanto');
+    return true; // Continuar mesmo sem banco
   }
 };
 
@@ -154,19 +156,13 @@ const testDatabaseConnection = async () => {
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
-  // Verificar conexão com banco de dados
-  const dbConnected = await testDatabaseConnection();
-
-  if (!dbConnected) {
-    console.error('❌ Não foi possível conectar ao banco de dados. Abortando...');
-    process.exit(1);
-  }
+  // Verificar conexão com banco de dados (não obrigatório)
+  await testDatabaseConnection();
 
   server.listen(PORT, () => {
     console.log(`
 🚀 Servidor rodando em: http://localhost:${PORT}
 📊 WebSocket ativo para comunicação em tempo real
-🗄️  Banco de dados: PostgreSQL
 🌐 CORS habilitado para: ${process.env.CLIENT_URL || 'http://localhost:5500'}
 
 ⚙️  Para inicializar o banco de dados, execute:
