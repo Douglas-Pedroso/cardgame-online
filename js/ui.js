@@ -61,28 +61,25 @@ function mostrarSelecaoDeck(tipo) {
     { id: 'cavaleiro', nome: 'Cavaleiro', emoji: '🏹', cor: '#FF6F00' }
   ];
 
-  const deckSelection = document.querySelector('.deck-selection') || criarDeckSelection();
-  deckSelection.innerHTML = decks.map(deck => `
+  let targetElement;
+  if (tipo === 'create') {
+    targetElement = document.querySelector('#deckGridCreate') || document.querySelector('#createGameScreen .deck-grid');
+  } else {
+    targetElement = document.querySelector('#deckGridJoin') || document.querySelector('#joinGameScreen .deck-grid');
+  }
+
+  if (!targetElement) {
+    console.error('Elemento de deck grid não encontrado para tipo:', tipo);
+    return;
+  }
+
+  targetElement.innerHTML = decks.map(deck => `
     <button class="btn deck-btn" style="border-left: 4px solid ${deck.cor};" onclick="selecionarDeck('${deck.id}', '${tipo}')">
       ${deck.emoji} ${deck.nome}
     </button>
   `).join('');
-
-  if (!document.querySelector('.deck-selection')) {
-    if (tipo === 'create') {
-      document.querySelector('#createGameScreen .setup-container').appendChild(deckSelection);
-    } else {
-      document.querySelector('#joinGameScreen .setup-container').appendChild(deckSelection);
-    }
-  }
 }
 
-function criarDeckSelection() {
-  const div = document.createElement('div');
-  div.className = 'deck-selection';
-  div.style.cssText = 'margin: 20px 0;';
-  return div;
-}
 
 function selecionarDeck(deckId, tipo) {
   selectedDeck = deckId;
