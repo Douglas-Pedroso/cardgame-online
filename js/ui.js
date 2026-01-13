@@ -298,37 +298,102 @@ function renderizarJogo() {
 }
 
 function configurarDropZones() {
-  const zonas = [
-    { id: 'playerField', zone: 'field' },
-    { id: 'playerHand', zone: 'hand' },
-    { id: 'playerBanished', zone: 'banished' }
+  // Não precisa mais de drop zones, usamos clique + modal agora
+}
+
+function abrirMenuCarta(card, zone, index) {
+  // Criar modal com opções
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  `;
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  const menuDiv = document.createElement('div');
+  menuDiv.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    max-width: 400px;
+    text-align: center;
+  `;
+  
+  const titulo = document.createElement('h3');
+  titulo.textContent = card.name;
+  titulo.style.cssText = 'margin: 0 0 15px 0; color: #333;';
+  menuDiv.appendChild(titulo);
+  
+  const info = document.createElement('p');
+  info.textContent = `💜${card.cost} ⚔️${card.power} | Zona atual: ${zone.toUpperCase()}`;
+  info.style.cssText = 'margin: 0 0 20px 0; color: #666; font-size: 14px;';
+  menuDiv.appendChild(info);
+  
+  // Botões para mover
+  const opcoes = [
+    { label: '🎮 Mover para Campo', zona: 'field' },
+    { label: '✋ Mover para Mão', zona: 'hand' },
+    { label: '💀 Mover para Banimento', zona: 'banished' }
   ];
   
-  zonas.forEach(zona => {
-    const elemento = document.getElementById(zona.id);
-    if (elemento) {
-      elemento.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        elemento.style.backgroundColor = 'rgba(100, 200, 100, 0.3)';
-        elemento.style.borderRadius = '8px';
-      });
-      
-      elemento.addEventListener('dragleave', (e) => {
-        elemento.style.backgroundColor = '';
-      });
-      
-      elemento.addEventListener('drop', (e) => {
-        e.preventDefault();
-        elemento.style.backgroundColor = '';
-        
-        const cardIndex = parseInt(e.dataTransfer.getData('cardIndex'));
-        const fromZone = e.dataTransfer.getData('fromZone');
-        
-        moverCarta(cardIndex, fromZone, zona.zone);
-      });
+  opcoes.forEach(opcao => {
+    if (zona !== opcao.zona) {
+      const btn = document.createElement('button');
+      btn.textContent = opcao.label;
+      btn.style.cssText = `
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+      `;
+      btn.onmouseover = () => btn.style.background = '#45a049';
+      btn.onmouseout = () => btn.style.background = '#4CAF50';
+      btn.onclick = () => {
+        moverCarta(index, zone, opcao.zona);
+        modal.remove();
+      };
+      menuDiv.appendChild(btn);
     }
   });
+  
+  // Botão fechar
+  const btnFechar = document.createElement('button');
+  btnFechar.textContent = '❌ Fechar';
+  btnFechar.style.cssText = `
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0 0 0;
+    background: #999;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  `;
+  btnFechar.onclick = () => modal.remove();
+  menuDiv.appendChild(btnFechar);
+  
+  modal.appendChild(menuDiv);
+  document.body.appendChild(modal);
 }
 
 function moverCarta(cardIndex, fromZone, toZone) {
@@ -436,7 +501,8 @@ function criarElementoCarta(card, zone, index) {
     }
   }
   
-  const imagePath = `assets/cards/${deckName}/${card.image.replace('.png', '')}.PNG`;
+  // Usar o ID como nome do arquivo, que já tem o sufixo
+  const imagePath = `assets/cards/${deckName}/${card.id}.PNG`;
   
   div.style.cssText = `
     position: relative;
@@ -445,7 +511,7 @@ function criarElementoCarta(card, zone, index) {
     border: 2px solid #333;
     border-radius: 8px;
     overflow: hidden;
-    cursor: move;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -458,7 +524,8 @@ function criarElementoCarta(card, zone, index) {
   div.onmouseover = () => div.style.transform = 'scale(1.05)';
   div.onmouseout = () => div.style.transform = 'scale(1)';
   
-  div.draggable = true;
+  // Clique para abrir menu de ações
+  div.onclick = () => abrirMenuCarta(card, zone, index);
   
   // Criar imagem da carta
   const img = document.createElement('img');
@@ -475,7 +542,7 @@ function criarElementoCarta(card, zone, index) {
     // Se a imagem não carregar, mostrar texto
     img.style.display = 'none';
     div.innerHTML = `
-      <div style="padding: 8px; text-align: center; font-weight: bold; font-size: 11px;">
+      <div style="padding: 8px; text-align: center; font-weight: bold; font-size: 11px; color: #333;">
         <div>${card.name}</div>
         <div>💜${card.cost}</div>
         <div>⚔️${card.power}</div>
@@ -501,12 +568,6 @@ function criarElementoCarta(card, zone, index) {
   
   div.appendChild(img);
   div.appendChild(info);
-
-  div.addEventListener('dragstart', (e) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('cardIndex', index);
-    e.dataTransfer.setData('fromZone', zone);
-  });
 
   return div;
 }
@@ -593,7 +654,7 @@ function copyRoomCode() {
 }
 
 function viewPlayerDeck() {
-  alert('Você tem ' + gameState.deck.length + ' cartas no deck');
+  abrirModalZona(gameState.deck, 'deck', 'Seu Deck');
 }
 
 function viewOpponentDeck() {
@@ -601,11 +662,142 @@ function viewOpponentDeck() {
 }
 
 function viewPlayerBanished() {
-  alert('Você tem ' + gameState.banished.length + ' cartas banidas');
+  abrirModalZona(gameState.banished, 'banished', 'Cartas Banidas');
 }
 
 function viewOpponentBanished() {
   alert('Oponente tem cartas banidas');
+}
+
+function abrirModalZona(cartas, zone, titulo) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    overflow: auto;
+  `;
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  const containerDiv = document.createElement('div');
+  containerDiv.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  `;
+  
+  const tituloDiv = document.createElement('h2');
+  tituloDiv.textContent = `${titulo} (${cartas.length} cartas)`;
+  tituloDiv.style.cssText = 'margin: 0 0 20px 0; color: #333; text-align: center;';
+  containerDiv.appendChild(tituloDiv);
+  
+  if (cartas.length === 0) {
+    const vazio = document.createElement('p');
+    vazio.textContent = 'Nenhuma carta nesta zona.';
+    vazio.style.cssText = 'text-align: center; color: #999;';
+    containerDiv.appendChild(vazio);
+  } else {
+    const gridDiv = document.createElement('div');
+    gridDiv.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    `;
+    
+    cartas.forEach((card, index) => {
+      const cartaDiv = document.createElement('div');
+      cartaDiv.style.cssText = `
+        cursor: pointer;
+        transition: transform 0.2s;
+        position: relative;
+      `;
+      cartaDiv.onmouseover = () => cartaDiv.style.transform = 'scale(1.1)';
+      cartaDiv.onmouseout = () => cartaDiv.style.transform = 'scale(1)';
+      
+      const img = document.createElement('img');
+      
+      // Encontrar o deck da carta
+      let deckName = 'aquatico';
+      for (let d in DECKS) {
+        if (DECKS[d].cards.some(c => c.id === card.id)) {
+          deckName = d;
+          break;
+        }
+      }
+      
+      img.src = `assets/cards/${deckName}/${card.id}.PNG`;
+      img.style.cssText = 'width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);';
+      img.onerror = () => {
+        img.style.display = 'none';
+        cartaDiv.innerHTML = `
+          <div style="
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background: #f0f0f0;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+          ">
+            <div>${card.name}</div>
+            <div>💜${card.cost} ⚔️${card.power}</div>
+          </div>
+        `;
+      };
+      
+      cartaDiv.appendChild(img);
+      
+      // Ao clicar, abrir menu de mover
+      cartaDiv.onclick = (e) => {
+        e.stopPropagation();
+        abrirMenuCarta(card, zone, index);
+        modal.remove();
+      };
+      
+      gridDiv.appendChild(cartaDiv);
+    });
+    
+    containerDiv.appendChild(gridDiv);
+  }
+  
+  const btnFechar = document.createElement('button');
+  btnFechar.textContent = '❌ Fechar';
+  btnFechar.style.cssText = `
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #999;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+  `;
+  btnFechar.onclick = () => modal.remove();
+  containerDiv.appendChild(btnFechar);
+  
+  modal.appendChild(containerDiv);
+  document.body.appendChild(modal);
 }
 
 console.log('✅ ui.js carregado com sucesso!');
