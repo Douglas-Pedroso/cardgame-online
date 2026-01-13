@@ -20,6 +20,9 @@ let gameState = {
 
 let selectedDeck = null;
 
+// Flag para evitar listeners duplicados
+let websocketListenersReady = false;
+
 // ========== MENU INICIAL ==========
 
 function showMenu() {
@@ -547,8 +550,12 @@ function criarElementoCarta(card, zone, index) {
   div.onmouseover = () => div.style.transform = 'scale(1.05)';
   div.onmouseout = () => div.style.transform = 'scale(1)';
   
-  // Clique para abrir menu de ações
-  div.onclick = () => abrirMenuCarta(card, zone, index);
+  // Clique para abrir menu de ações - usar addEventListener
+  div.addEventListener('click', (e) => {
+    e.stopPropagation();
+    console.log('📋 Clicou na carta:', card.name);
+    abrirMenuCarta(card, zone, index);
+  });
   
   // Criar imagem da carta
   const img = document.createElement('img');
@@ -617,6 +624,15 @@ function atualizarInfoJogador() {
 // ========== WEBSOCKET LISTENERS ==========
 
 function prepararListenersWebSocket() {
+  // Evitar múltiplos listeners
+  if (websocketListenersReady) {
+    console.log('⚠️ Listeners WebSocket já foram preparados');
+    return;
+  }
+  
+  websocketListenersReady = true;
+  console.log('🔌 Preparando listeners WebSocket...');
+
   window.API.onPlayerJoined((data) => {
     console.log('👤 Novo jogador entrou:', data.playerId);
     currentGame.opponentId = data.playerId;
@@ -631,6 +647,7 @@ function prepararListenersWebSocket() {
     console.log('🔄 Estado recebido do oponente:', data);
     // Atualizar estado do oponente (não sobrescrever o nosso)
     if (data.playerId !== currentGame.playerId) {
+      console.log('📊 Renderizando campo do oponente...');
       // Renderizar o campo do oponente com as cartas dele
       renderizarCampoOponente(data.gameState);
     }
@@ -642,10 +659,13 @@ function prepararListenersWebSocket() {
     // Se for escolha de RPS
     if (data.action === 'rps_choice') {
       const minhaEscolha = localStorage.getItem('rpsChoice');
-      if (minhaEscolha) {
-        console.log('🎮 Comparando RPS:', minhaEscolha, 'vs', data.details.choice);
+      console.log('🎮 Comparando RPS - Minha:', minhaEscolha, 'Oponente:', data.details.choice);
+      
+      if (minhaEscolha && data.details.choice) {
         const resultado = determinarVencedorRPS(minhaEscolha, data.details.choice);
         const vencedor = resultado === 1 ? currentGame.playerId : currentGame.opponentId;
+        
+        console.log('🏆 Resultado RPS:', resultado === 1 ? 'VENCEU' : resultado === 0 ? 'EMPATE' : 'PERDEU');
         
         mostrarResultadoRPS(minhaEscolha, data.details.choice, resultado);
         
