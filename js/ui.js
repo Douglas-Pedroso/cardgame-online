@@ -23,6 +23,13 @@ let selectedDeck = null;
 // Flag para evitar listeners duplicados
 let websocketListenersReady = false;
 
+// 🎮 Armazenar escolhas de RPS (não usar localStorage compartilhado!)
+let rpsState = {
+  myChoice: null,
+  opponentChoice: null,
+  choicesReceived: 0
+};
+
 // ========== MENU INICIAL ==========
 
 function showMenu() {
@@ -169,6 +176,9 @@ async function executarEntrarSala() {
 
     prepararListenersWebSocket();
     
+    // 🔝 Scroll para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     // Mostra tela de RPS imediatamente
     mostrarTelaPedraoPapelTesoura();
 
@@ -217,15 +227,18 @@ function mostrarTelaJogo() {
 function makeRPSChoice(escolha) {
   try {
     console.log('🎮 Sua escolha RPS:', escolha);
+    
+    // Armazenar escolha localmente na variável, NÃO no localStorage
+    rpsState.myChoice = escolha;
+    rpsState.choicesReceived += 1;
+    
+    console.log('📊 RPS State:', rpsState);
+    
     document.getElementById('rpsWaiting').classList.remove('hidden');
     document.getElementById('rpsChoices').classList.add('hidden');
 
     // Emitir escolha via WebSocket para o oponente
     window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'rps_choice', { choice: escolha });
-    
-    // Armazenar nossa escolha temporariamente
-    localStorage.setItem('rpsChoice', escolha);
-    localStorage.setItem('rpsChoiceTime', Date.now());
     
     console.log('⏳ Aguardando escolha do oponente...');
   } catch (error) {
@@ -311,6 +324,7 @@ function inicializarJogo(vencedorRPS) {
 function renderizarJogo() {
   renderizarMaoJogador();
   renderizarCampoJogador();
+  renderizarDeck();
   renderizarCartasBanidas();
   atualizarInfoJogador();
   configurarDropZones();
@@ -484,11 +498,14 @@ function moverCarta(cardIndex, fromZone, toZone) {
     gameState.field.push(carta);
   } else if (toZone === 'banished') {
     gameState.banished.push(carta);
+  } else if (toZone === 'deck') {
+    gameState.deck.push(carta);
   }
   
   // Re-renderizar
   renderizarMaoJogador();
   renderizarCampoJogador();
+  renderizarDeck();
   renderizarCartasBanidas();
   atualizarInfoJogador();
   
@@ -547,11 +564,14 @@ function moverCartaPorId(cardId, fromZone, toZone) {
     gameState.field.push(carta);
   } else if (toZone === 'banished') {
     gameState.banished.push(carta);
+  } else if (toZone === 'deck') {
+    gameState.deck.push(carta);
   }
   
   // Re-renderizar
   renderizarMaoJogador();
   renderizarCampoJogador();
+  renderizarDeck();
   renderizarCartasBanidas();
   atualizarInfoJogador();
   
@@ -624,6 +644,32 @@ function renderizarCartasBanidas() {
   const countElement = document.getElementById('playerBanishedCount');
   if (countElement) {
     countElement.textContent = gameState.banished.length;
+  }
+}
+
+// 📌 NOVA FUNÇÃO: Renderizar cartas do deck (podem ser arrastadas)
+function renderizarDeck() {
+  const container = document.getElementById('playerDeck');
+  configurarDropZone('playerDeck', 'deck');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  // Mostrar apenas as primeiras 5 cartas do deck visualmente (empilhadas)
+  const cartasVisiveis = gameState.deck.slice(0, Math.min(5, gameState.deck.length));
+  
+  cartasVisiveis.forEach((card, index) => {
+    const cardElement = criarElementoCarta(card, 'deck', index);
+    cardElement.style.width = '80px';
+    cardElement.style.height = '110px';
+    // Deslocar visualmente para simular pilha
+    cardElement.style.marginLeft = (index * 5) + 'px';
+    container.appendChild(cardElement);
+  });
+  
+  const countElement = document.getElementById('playerDeckCount');
+  if (countElement) {
+    countElement.textContent = gameState.deck.length;
   }
 }
 
@@ -777,6 +823,8 @@ function prepararListenersWebSocket() {
     localStorage.setItem('opponentId', data.playerId);
 
     if (document.getElementById('waitingScreen').classList.contains('active')) {
+      // Ocultar a tela de join se ainda estiver visível
+      document.getElementById('joinGameScreen').classList.remove('active');
       mostrarTelaPedraoPapelTesoura();
     }
   });
@@ -796,21 +844,41 @@ function prepararListenersWebSocket() {
     
     // Se for escolha de RPS
     if (data.action === 'rps_choice') {
-      const minhaEscolha = localStorage.getItem('rpsChoice');
-      console.log('🎮 Comparando RPS - Minha:', minhaEscolha, 'Oponente:', data.details.choice);
+      console.log('🎮 Escolha do oponente recebida:', data.details.choice);
       
-      if (minhaEscolha && data.details.choice) {
-        const resultado = determinarVencedorRPS(minhaEscolha, data.details.choice);
-        const vencedor = resultado === 1 ? currentGame.playerId : currentGame.opponentId;
+      // Armazenar escolha do oponente
+      rpsState.opponentChoice = data.details.choice;
+      rpsState.choicesReceived += 1;
+      
+      console.log('📊 RPS State agora:', rpsState);
+      
+      // Se ambos já escolheram, determinar vencedor
+      if (rpsState.myChoice && rpsState.opponentChoice) {
+        console.log('✅ Ambas as escolhas recebidas! Determinando vencedor...');
+        const resultado = determinarVencedorRPS(rpsState.myChoice, rpsState.opponentChoice);
+        const vencedor = resultado === 1 ? currentGame.playerId : (resultado === 0 ? 'empate' : currentGame.opponentId);
         
         console.log('🏆 Resultado RPS:', resultado === 1 ? 'VENCEU' : resultado === 0 ? 'EMPATE' : 'PERDEU');
+        console.log('🏆 Vencedor:', vencedor);
         
-        mostrarResultadoRPS(minhaEscolha, data.details.choice, resultado);
+        mostrarResultadoRPS(rpsState.myChoice, rpsState.opponentChoice, resultado);
         
         setTimeout(() => {
-          inicializarJogo(vencedor);
-          mostrarTelaJogo();
+          if (vencedor !== 'empate') {
+            inicializarJogo(vencedor);
+            mostrarTelaJogo();
+          } else {
+            // Empate - resetar e permitir nova rodada
+            console.log('🔄 Empate! Permitindo nova tentativa...');
+            rpsState.myChoice = null;
+            rpsState.opponentChoice = null;
+            document.getElementById('rpsWaiting').classList.add('hidden');
+            document.getElementById('rpsChoices').classList.remove('hidden');
+            document.getElementById('rpsResult').classList.add('hidden');
+          }
         }, 3000);
+      } else {
+        console.log('⏳ Ainda aguardando minha escolha...');
       }
     }
   });
