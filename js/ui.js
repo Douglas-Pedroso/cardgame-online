@@ -783,25 +783,35 @@ function prepararListenersWebSocket() {
       // Ocultar a tela de join se ainda estiver visível
       document.getElementById('joinGameScreen').classList.remove('active');
       mostrarTelaPronto();
+      
+      // 🎮 Jogador 1 inicia o jogo e emite estado
+      console.log('⏳ Pequeno delay antes de iniciar jogo...');
+      setTimeout(() => {
+        console.log('🎮 Jogador 1 iniciando jogo!');
+        inicializarJogo();
+        // NÃO chamar mostrarTelaJogo() aqui - deixar para onGameStateUpdate
+      }, 1500);
+    } else {
+      // Jogador 2 também mostra tela de "aguardando"
+      mostrarTelaPronto();
     }
-    
-    // 🎮 Iniciar o jogo direto quando o oponente entra!
-    // Pequeno delay para garantir que ambos estão prontos
-    console.log('⏳ Pequeno delay antes de iniciar jogo...');
-    setTimeout(() => {
-      console.log('🎮 Iniciando jogo agora!');
-      inicializarJogo();
-      mostrarTelaJogo();
-    }, 1500);
   });
 
   window.API.onGameStateUpdate((data) => {
     console.log('🔄 Estado recebido do oponente:', data);
+    
     // Atualizar estado do oponente (não sobrescrever o nosso)
     if (data.playerId !== currentGame.playerId) {
       console.log('📊 Renderizando campo do oponente...');
       // Renderizar o campo do oponente com as cartas dele
       renderizarCampoOponente(data.gameState);
+      
+      // 🎮 SE AINDA NÃO ESTAMOS NO JOGO, ENTRAR AGORA!
+      if (document.getElementById('rpsScreen').classList.contains('active')) {
+        console.log('✅ RECEBIDO GAME STATE - AMBOS ENTRAM NO JOGO AGORA!');
+        inicializarJogo();
+        mostrarTelaJogo();
+      }
     }
   });
 
