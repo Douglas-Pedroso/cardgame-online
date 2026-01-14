@@ -606,8 +606,8 @@ function renderizarCartasBanidas() {
 
 // 📌 NOVA FUNÇÃO: Renderizar cartas do deck (podem ser arrastadas)
 function renderizarDeck() {
-  const container = document.getElementById('playerDeck');
-  configurarDropZone('playerDeck', 'deck');
+  const container = document.getElementById('playerDeckZone');
+  configurarDropZone('playerDeckZone', 'deck');
   if (!container) return;
 
   container.innerHTML = '';
