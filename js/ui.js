@@ -619,6 +619,7 @@ function renderizarDeck() {
   // Adicionar drag-drop ao card-back para permitir arrastar qualquer carta
   cardBack.draggable = true;
   cardBack.style.cursor = 'grab';
+  cardBack.style.position = 'relative';
   
   cardBack.addEventListener('dragstart', (e) => {
     // Quando dragar o card-back, pega a primeira carta do deck
@@ -634,6 +635,12 @@ function renderizarDeck() {
   cardBack.addEventListener('dragend', (e) => {
     console.log('✋ Finalizando drag do deck');
     cardBack.style.opacity = '1';
+  });
+  
+  // Adicionar clique para abrir a modal do deck
+  cardBack.addEventListener('click', (e) => {
+    e.stopPropagation();
+    viewPlayerDeck();
   });
   
   container.appendChild(cardBack);
@@ -928,6 +935,14 @@ function abrirModalZona(cartas, zone, titulo) {
   tituloDiv.style.cssText = 'margin: 0 0 20px 0; color: #333; text-align: center;';
   containerDiv.appendChild(tituloDiv);
   
+  // Adicionar instrução se for o deck
+  if (zone === 'deck') {
+    const instrucao = document.createElement('p');
+    instrucao.textContent = '📌 Dica: Clique em uma carta para mover ou arraste para uma zona do campo';
+    instrucao.style.cssText = 'text-align: center; color: #0066cc; margin: 0 0 15px 0; font-size: 14px; font-style: italic;';
+    containerDiv.appendChild(instrucao);
+  }
+  
   if (cartas.length === 0) {
     const vazio = document.createElement('p');
     vazio.textContent = 'Nenhuma carta nesta zona.';
@@ -945,12 +960,41 @@ function abrirModalZona(cartas, zone, titulo) {
     cartas.forEach((card, index) => {
       const cartaDiv = document.createElement('div');
       cartaDiv.style.cssText = `
-        cursor: pointer;
+        cursor: ${zone === 'deck' ? 'move' : 'pointer'};
         transition: transform 0.2s;
         position: relative;
+        padding: 5px;
+        border-radius: 8px;
       `;
-      cartaDiv.onmouseover = () => cartaDiv.style.transform = 'scale(1.1)';
-      cartaDiv.onmouseout = () => cartaDiv.style.transform = 'scale(1)';
+      
+      // Se for do deck, permitir drag-and-drop
+      if (zone === 'deck') {
+        cartaDiv.draggable = true;
+        cartaDiv.style.border = '2px solid transparent';
+        
+        cartaDiv.addEventListener('dragstart', (e) => {
+          console.log('🎰 Arrastrando carta do deck:', card.name, 'ID:', card.id);
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('card', JSON.stringify({cardId: card.id, zone: 'deck', cardName: card.name}));
+          cartaDiv.style.opacity = '0.5';
+          cartaDiv.style.border = '2px dashed #0066cc';
+        });
+        
+        cartaDiv.addEventListener('dragend', (e) => {
+          console.log('✋ Finalizando drag da carta');
+          cartaDiv.style.opacity = '1';
+          cartaDiv.style.border = '2px solid transparent';
+        });
+      }
+      
+      cartaDiv.onmouseover = () => {
+        cartaDiv.style.transform = 'scale(1.1)';
+        cartaDiv.style.backgroundColor = 'rgba(100, 150, 255, 0.1)';
+      };
+      cartaDiv.onmouseout = () => {
+        cartaDiv.style.transform = 'scale(1)';
+        cartaDiv.style.backgroundColor = 'transparent';
+      };
       
       const img = document.createElement('img');
       
@@ -991,11 +1035,13 @@ function abrirModalZona(cartas, zone, titulo) {
       cartaDiv.appendChild(img);
       
       // Ao clicar, abrir menu de mover
-      cartaDiv.onclick = (e) => {
+      cartaDiv.addEventListener('click', (e) => {
+        // Não abrir menu se estiver arrastando
+        if (cartaDiv.style.opacity === '0.5') return;
         e.stopPropagation();
         abrirMenuCarta(card, zone, index);
         modal.remove();
-      };
+      });
       
       gridDiv.appendChild(cartaDiv);
     });
