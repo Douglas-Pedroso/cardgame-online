@@ -23,13 +23,10 @@ let selectedDeck = null;
 // Flag para evitar listeners duplicados
 let websocketListenersReady = false;
 
-// 🎮 Armazenar escolhas de RPS (não usar localStorage compartilhado!)
-let rpsState = {
-  myChoice: null,
-  opponentChoice: null,
-  choicesReceived: 0,
-  rpsResultReceived: false,  // 📌 Flag para confirmar que recebeu resultado
-  rpsCalculated: false        // 📌 Flag para evitar calcular múltiplas vezes
+// ⏳ Estado de "Pronto" para sincronização simples
+let readyState = {
+  myReady: false,
+  opponentReady: false
 };
 
 // ========== MENU INICIAL ==========
@@ -181,8 +178,8 @@ async function executarEntrarSala() {
     // 🔝 Scroll para o topo
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Mostra tela de RPS imediatamente
-    mostrarTelaPedraoPapelTesoura();
+    // Mostra tela de "Pronto" ao invés de RPS
+    mostrarTelaPronto();
 
     console.log('✅ Entrou na sala:', roomCode);
   } catch (error) {
@@ -204,14 +201,58 @@ function mostrarTelaAguardandoOponente(roomCode) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function mostrarTelaPedraoPapelTesoura() {
+function mostrarTelaPronto() {
   document.getElementById('waitingScreen').classList.remove('active');
   document.getElementById('rpsScreen').classList.add('active');
-  document.getElementById('rpsWaiting').classList.add('hidden');
+  document.getElementById('rpsWaiting').classList.remove('hidden');
+  document.getElementById('rpsChoices').classList.add('hidden');
   document.getElementById('rpsResult').classList.add('hidden');
   
-  // 🔝 Scroll suave para o topo para que a tela RPS seja visível
+  // Resetar estado de pronto
+  readyState.myReady = false;
+  readyState.opponentReady = false;
+  
+  // Mudar texto e botão para "Pronto"
+  const rpsWaitingDiv = document.getElementById('rpsWaiting');
+  if (rpsWaitingDiv) {
+    rpsWaitingDiv.innerHTML = `
+      <div style="text-align: center; padding: 40px;">
+        <h2>⏳ Ambos os jogadores prontos?</h2>
+        <p style="font-size: 18px; margin: 20px 0;">
+          Clique em "Pronto" quando estiver pronto para começar!
+        </p>
+        <button class="btn" id="readyBtn" onclick="marcarPronto()" style="padding: 15px 40px; font-size: 18px; background: #4CAF50;">
+          ✅ Pronto!
+        </button>
+        <p id="readyStatus" style="margin-top: 30px; font-size: 16px; color: #666;">
+          Você: Aguardando... <br>
+          Oponente: Aguardando...
+        </p>
+      </div>
+    `;
+  }
+  
+  // 🔝 Scroll suave para o topo
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function marcarPronto() {
+  console.log('✅ Marcando como pronto!');
+  
+  readyState.myReady = true;
+  
+  // Desabilitar botão
+  const btn = document.getElementById('readyBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Aguardando oponente...';
+    btn.style.background = '#999';
+  }
+  
+  // Emitir que estamos prontos
+  window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'player_ready', {});
+  
+  console.log('📤 Emitido: player_ready');
 }
 
 function mostrarTelaJogo() {
@@ -224,78 +265,13 @@ function mostrarTelaJogo() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ========== ROCK, PAPER, SCISSORS ==========
-
-function makeRPSChoice(escolha) {
-  try {
-    console.log('🎮 Sua escolha RPS:', escolha);
-    
-    // Armazenar escolha localmente na variável, NÃO no localStorage
-    rpsState.myChoice = escolha;
-    rpsState.choicesReceived += 1;
-    
-    console.log('📊 RPS State:', rpsState);
-    
-    document.getElementById('rpsWaiting').classList.remove('hidden');
-    document.getElementById('rpsChoices').classList.add('hidden');
-
-    // 📢 Emitir escolha via WebSocket para o oponente
-    window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'rps_choice', { choice: escolha });
-    
-    console.log('⏳ Aguardando resultado de ambos os jogadores...');
-  } catch (error) {
-    console.error('Erro ao fazer escolha RPS:', error);
-  }
-}
-
-function determinarVencedorRPS(p1, p2) {
-  if (p1 === p2) return 0;
-  if (p1 === 'rock' && p2 === 'scissors') return 1;
-  if (p1 === 'paper' && p2 === 'rock') return 1;
-  if (p1 === 'scissors' && p2 === 'paper') return 1;
-  return -1;
-}
-
-function mostrarResultadoRPS(sua, oponente, resultado) {
-  const textos = {
-    'rock': '✊ Pedra',
-    'paper': '✋ Papel',
-    'scissors': '✌️ Tesoura'
-  };
-
-  const resultadoTexto = resultado === 1
-    ? '🎉 Você venceu! Você começa!'
-    : resultado === 0
-      ? '🤝 Empate! Revanche!'
-      : '😔 Você perdeu. Oponente começa!';
-
-  const rpsResult = document.getElementById('rpsResult');
-  rpsResult.innerHTML = `
-    <div class="rps-result-display">
-      <div class="rps-choice-result">
-        <span>Sua escolha</span>
-        <div class="rps-large">${textos[sua]}</div>
-      </div>
-      <div class="rps-vs">VS</div>
-      <div class="rps-choice-result">
-        <span>Oponente</span>
-        <div class="rps-large">${textos[oponente]}</div>
-      </div>
-    </div>
-    <p class="rps-result-text">${resultadoTexto}</p>
-  `;
-  rpsResult.classList.remove('hidden');
-}
-
 // ========== INICIALIZAR JOGO ==========
 
-function inicializarJogo(vencedorRPS) {
+function inicializarJogo() {
   // ⚠️ IMPORTANTE: Usar a variável selectedDeck que foi definida ao clicar no botão
   // Isso garante que cada jogador mantém sua própria seleção
   const deckSelecionado = selectedDeck || localStorage.getItem('playerDeck') || 'aquatico';
   console.log('📚 Inicializando jogo com deck:', deckSelecionado);
-  console.log('🔍 selectedDeck (variável global):', selectedDeck);
-  console.log('🔍 playerDeck (localStorage):', localStorage.getItem('playerDeck'));
 
   const deckCartas = DECKS[deckSelecionado]?.cards || DECKS['aquatico'].cards;
   
@@ -310,11 +286,15 @@ function inicializarJogo(vencedorRPS) {
     deck: deckCartas.slice(4),
     banished: [],
     pressureLevel: 0,
-    deckName: deckSelecionado  // 📌 Guardar qual deck está sendo usado
+    deckName: deckSelecionado
   };
 
-  currentGame.currentTurn = vencedorRPS;
-  console.log('🎮 Jogo iniciado! Começa:', vencedorRPS);
+  // 📌 Determinar quem começa (pode ser aleatório ou primeira entrada)
+  // Por agora, jogador 1 começa sempre
+  const primeiroJogador = currentGame.playerId;
+  currentGame.currentTurn = primeiroJogador;
+  
+  console.log('🎮 Jogo iniciado! Começa:', primeiroJogador);
   console.log('📊 Estado: Mão=' + gameState.hand.length + ', Deck=' + gameState.deck.length + ', Campo=' + gameState.field.length);
   
   // Emitir estado inicial do jogo
@@ -827,7 +807,7 @@ function prepararListenersWebSocket() {
     if (document.getElementById('waitingScreen').classList.contains('active')) {
       // Ocultar a tela de join se ainda estiver visível
       document.getElementById('joinGameScreen').classList.remove('active');
-      mostrarTelaPedraoPapelTesoura();
+      mostrarTelaPronto();
     }
   });
 
@@ -844,72 +824,26 @@ function prepararListenersWebSocket() {
   window.API.onPlayerAction((data) => {
     console.log('🎯 Ação do oponente:', data.action, data.details);
     
-    // Se for escolha de RPS
-    if (data.action === 'rps_choice') {
-      console.log('🎮 Escolha do oponente recebida:', data.details.choice);
+    // Se for ação de "Pronto"
+    if (data.action === 'player_ready') {
+      console.log('✅ Oponente marcou como pronto!');
+      readyState.opponentReady = true;
       
-      // Armazenar escolha do oponente
-      rpsState.opponentChoice = data.details.choice;
-      rpsState.choicesReceived += 1;
-      
-      console.log('📊 RPS State agora:', rpsState);
-      
-      // Se ambos já escolheram, determinar vencedor
-      if (rpsState.myChoice && rpsState.opponentChoice && !rpsState.rpsCalculated) {
-        console.log('✅ Ambas as escolhas recebidas! Determinando vencedor...');
-        rpsState.rpsCalculated = true; // 📌 Marcar que já calculamos
-        
-        const resultado = determinarVencedorRPS(rpsState.myChoice, rpsState.opponentChoice);
-        const vencedor = resultado === 1 ? currentGame.playerId : (resultado === 0 ? 'empate' : currentGame.opponentId);
-        
-        console.log('🏆 Resultado RPS:', resultado === 1 ? 'VENCEU' : resultado === 0 ? 'EMPATE' : 'PERDEU');
-        console.log('🏆 Vencedor:', vencedor);
-        
-        mostrarResultadoRPS(rpsState.myChoice, rpsState.opponentChoice, resultado);
-        
-        // 📢 Emitir resultado do RPS para AMBOS os jogadores
-        console.log('📤 Emitindo rps_result para ambos os jogadores...');
-        window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'rps_result', { vencedor, resultado });
-      } else {
-        console.log('⏳ Ainda aguardando minha escolha ou resultado já foi calculado...');
+      // Atualizar UI
+      const statusDiv = document.getElementById('readyStatus');
+      if (statusDiv) {
+        const myStatus = readyState.myReady ? '✅ Pronto' : '⏳ Aguardando...';
+        const opponentStatus = readyState.opponentReady ? '✅ Pronto' : '⏳ Aguardando...';
+        statusDiv.innerHTML = `Você: ${myStatus} <br> Oponente: ${opponentStatus}`;
       }
-    }
-    
-    // Se for resultado do RPS (ambos os jogadores recebem)
-    if (data.action === 'rps_result') {
-      console.log('🏆 Resultado do RPS recebido:', data.details.vencedor);
       
-      // 📌 Marcar que recebemos o resultado (importante!)
-      if (!rpsState.rpsResultReceived) {
-        rpsState.rpsResultReceived = true;
-        
-        const vencedor = data.details.vencedor;
-        const resultado = data.details.resultado;
-        
-        // Se não mostramos ainda, mostrar agora
-        if (document.getElementById('rpsResult').classList.contains('hidden')) {
-          console.log('📊 Mostrando resultado RPS agora...');
-          mostrarResultadoRPS(rpsState.myChoice, rpsState.opponentChoice, resultado);
-        }
-        
-        // Ambos os jogadores entram no jogo APÓS receber o resultado
+      // Se ambos estão prontos, iniciar jogo
+      if (readyState.myReady && readyState.opponentReady) {
+        console.log('🎮 AMBOS PRONTOS! Iniciando jogo...');
         setTimeout(() => {
-          if (vencedor !== 'empate') {
-            console.log('✅ INICIANDO JOGO! Vencedor:', vencedor);
-            inicializarJogo(vencedor);
-            mostrarTelaJogo();
-          } else {
-            // Empate - resetar e permitir nova rodada
-            console.log('🔄 Empate! Permitindo nova tentativa...');
-            rpsState.myChoice = null;
-            rpsState.opponentChoice = null;
-            rpsState.rpsResultReceived = false;
-            rpsState.rpsCalculated = false;
-            document.getElementById('rpsWaiting').classList.add('hidden');
-            document.getElementById('rpsChoices').classList.remove('hidden');
-            document.getElementById('rpsResult').classList.add('hidden');
-          }
-        }, 3000);
+          inicializarJogo();
+          mostrarTelaJogo();
+        }, 1000);
       }
     }
   });
