@@ -212,47 +212,22 @@ function mostrarTelaPronto() {
   readyState.myReady = false;
   readyState.opponentReady = false;
   
-  // Mudar texto e botão para "Pronto"
+  // Mudar texto da tela para aguardando
   const rpsWaitingDiv = document.getElementById('rpsWaiting');
   if (rpsWaitingDiv) {
     rpsWaitingDiv.innerHTML = `
       <div style="text-align: center; padding: 40px;">
-        <h2>⏳ Ambos os jogadores prontos?</h2>
+        <h2>⏳ Aguardando oponente...</h2>
         <p style="font-size: 18px; margin: 20px 0;">
-          Clique em "Pronto" quando estiver pronto para começar!
+          O jogo começará quando o oponente entrar na sala!
         </p>
-        <button class="btn" id="readyBtn" onclick="marcarPronto()" style="padding: 15px 40px; font-size: 18px; background: #4CAF50;">
-          ✅ Pronto!
-        </button>
-        <p id="readyStatus" style="margin-top: 30px; font-size: 16px; color: #666;">
-          Você: Aguardando... <br>
-          Oponente: Aguardando...
-        </p>
+        <div style="animation: spin 2s linear infinite; font-size: 48px;">🎲</div>
       </div>
     `;
   }
   
   // 🔝 Scroll suave para o topo
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function marcarPronto() {
-  console.log('✅ Marcando como pronto!');
-  
-  readyState.myReady = true;
-  
-  // Desabilitar botão
-  const btn = document.getElementById('readyBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Aguardando oponente...';
-    btn.style.background = '#999';
-  }
-  
-  // Emitir que estamos prontos
-  window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'player_ready', {});
-  
-  console.log('📤 Emitido: player_ready');
 }
 
 function mostrarTelaJogo() {
@@ -809,6 +784,15 @@ function prepararListenersWebSocket() {
       document.getElementById('joinGameScreen').classList.remove('active');
       mostrarTelaPronto();
     }
+    
+    // 🎮 Iniciar o jogo direto quando o oponente entra!
+    // Pequeno delay para garantir que ambos estão prontos
+    console.log('⏳ Pequeno delay antes de iniciar jogo...');
+    setTimeout(() => {
+      console.log('🎮 Iniciando jogo agora!');
+      inicializarJogo();
+      mostrarTelaJogo();
+    }, 1500);
   });
 
   window.API.onGameStateUpdate((data) => {
@@ -824,28 +808,7 @@ function prepararListenersWebSocket() {
   window.API.onPlayerAction((data) => {
     console.log('🎯 Ação do oponente:', data.action, data.details);
     
-    // Se for ação de "Pronto"
-    if (data.action === 'player_ready') {
-      console.log('✅ Oponente marcou como pronto!');
-      readyState.opponentReady = true;
-      
-      // Atualizar UI
-      const statusDiv = document.getElementById('readyStatus');
-      if (statusDiv) {
-        const myStatus = readyState.myReady ? '✅ Pronto' : '⏳ Aguardando...';
-        const opponentStatus = readyState.opponentReady ? '✅ Pronto' : '⏳ Aguardando...';
-        statusDiv.innerHTML = `Você: ${myStatus} <br> Oponente: ${opponentStatus}`;
-      }
-      
-      // Se ambos estão prontos, iniciar jogo
-      if (readyState.myReady && readyState.opponentReady) {
-        console.log('🎮 AMBOS PRONTOS! Iniciando jogo...');
-        setTimeout(() => {
-          inicializarJogo();
-          mostrarTelaJogo();
-        }, 1000);
-      }
-    }
+    // Você pode adicionar outros eventos de ação aqui no futuro
   });
 
   window.API.onTurnChanged((data) => {
