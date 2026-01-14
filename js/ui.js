@@ -863,6 +863,9 @@ function prepararListenersWebSocket() {
         
         mostrarResultadoRPS(rpsState.myChoice, rpsState.opponentChoice, resultado);
         
+        // 📢 Emitir resultado do RPS para AMBOS os jogadores
+        window.API.emitPlayerAction(currentGame.roomCode, currentGame.playerId, 'rps_result', { vencedor, resultado });
+        
         setTimeout(() => {
           if (vencedor !== 'empate') {
             inicializarJogo(vencedor);
@@ -880,6 +883,35 @@ function prepararListenersWebSocket() {
       } else {
         console.log('⏳ Ainda aguardando minha escolha...');
       }
+    }
+    
+    // Se for resultado do RPS (ambos os jogadores recebem)
+    if (data.action === 'rps_result') {
+      console.log('🏆 Resultado do RPS recebido:', data.details.vencedor);
+      
+      const vencedor = data.details.vencedor;
+      const resultado = data.details.resultado;
+      
+      // Se não mostramos ainda, mostrar agora
+      if (document.getElementById('rpsResult').classList.contains('hidden')) {
+        mostrarResultadoRPS(rpsState.myChoice, rpsState.opponentChoice, resultado);
+      }
+      
+      setTimeout(() => {
+        if (vencedor !== 'empate') {
+          console.log('🎮 Iniciando jogo com vencedor:', vencedor);
+          inicializarJogo(vencedor);
+          mostrarTelaJogo();
+        } else {
+          // Empate - resetar e permitir nova rodada
+          console.log('🔄 Empate! Permitindo nova tentativa...');
+          rpsState.myChoice = null;
+          rpsState.opponentChoice = null;
+          document.getElementById('rpsWaiting').classList.add('hidden');
+          document.getElementById('rpsChoices').classList.remove('hidden');
+          document.getElementById('rpsResult').classList.add('hidden');
+        }
+      }, 3000);
     }
   });
 
