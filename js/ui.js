@@ -612,18 +612,33 @@ function renderizarDeck() {
 
   container.innerHTML = '';
 
-  // Mostrar apenas as primeiras 5 cartas do deck visualmente (empilhadas)
-  const cartasVisiveis = gameState.deck.slice(0, Math.min(5, gameState.deck.length));
+  // 📌 Manter layout original: mostrar card-back + contador
+  const cardBack = document.createElement('div');
+  cardBack.className = 'card-back';
   
-  cartasVisiveis.forEach((card, index) => {
-    const cardElement = criarElementoCarta(card, 'deck', index);
-    cardElement.style.width = '80px';
-    cardElement.style.height = '110px';
-    // Deslocar visualmente para simular pilha
-    cardElement.style.marginLeft = (index * 5) + 'px';
-    container.appendChild(cardElement);
+  // Adicionar drag-drop ao card-back para permitir arrastar qualquer carta
+  cardBack.draggable = true;
+  cardBack.style.cursor = 'grab';
+  
+  cardBack.addEventListener('dragstart', (e) => {
+    // Quando dragar o card-back, pega a primeira carta do deck
+    if (gameState.deck.length > 0) {
+      const card = gameState.deck[0];
+      console.log('🎰 Iniciando drag da primeira carta do deck:', card.name, 'ID:', card.id);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('card', JSON.stringify({cardId: card.id, zone: 'deck', cardName: card.name}));
+      cardBack.style.opacity = '0.5';
+    }
   });
   
+  cardBack.addEventListener('dragend', (e) => {
+    console.log('✋ Finalizando drag do deck');
+    cardBack.style.opacity = '1';
+  });
+  
+  container.appendChild(cardBack);
+  
+  // Atualizar contador
   const countElement = document.getElementById('playerDeckCount');
   if (countElement) {
     countElement.textContent = gameState.deck.length;
