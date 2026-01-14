@@ -978,12 +978,16 @@ function abrirModalZona(cartas, zone, titulo) {
           e.dataTransfer.setData('card', JSON.stringify({cardId: card.id, zone: 'deck', cardName: card.name}));
           cartaDiv.style.opacity = '0.5';
           cartaDiv.style.border = '2px dashed #0066cc';
+          // Desabilitar eventos da modal para permitir drop nas zonas
+          modal.style.pointerEvents = 'none';
         });
         
         cartaDiv.addEventListener('dragend', (e) => {
           console.log('✋ Finalizando drag da carta');
           cartaDiv.style.opacity = '1';
           cartaDiv.style.border = '2px solid transparent';
+          // Reabilitar eventos da modal
+          modal.style.pointerEvents = 'auto';
         });
       }
       
