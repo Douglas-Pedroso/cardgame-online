@@ -30,13 +30,20 @@ function showMenu() {
   document.getElementById('menuScreen').classList.add('active');
   document.getElementById('createGameScreen').classList.remove('active');
   document.getElementById('joinGameScreen').classList.remove('active');
+  document.getElementById('onlineOptionsScreen').classList.remove('active');
   document.getElementById('gameScreen').classList.remove('active');
   document.getElementById('waitingScreen').classList.remove('active');
   document.getElementById('rpsScreen').classList.remove('active');
 }
 
-function showCreateGame() {
+function showOnlineOptions() {
   document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('gameModeScreen').classList.remove('active');
+  document.getElementById('onlineOptionsScreen').classList.add('active');
+}
+
+function showCreateGame() {
+  document.getElementById('onlineOptionsScreen').classList.remove('active');
   document.getElementById('createGameScreen').classList.add('active');
   
   // Mostrar seleção de deck
@@ -44,7 +51,7 @@ function showCreateGame() {
 }
 
 function showJoinGame() {
-  document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('onlineOptionsScreen').classList.remove('active');
   document.getElementById('joinGameScreen').classList.add('active');
   
   // Mostrar seleção de deck
@@ -126,8 +133,14 @@ async function executarCriarSala() {
 
     console.log('✅ Sala criada:', game.roomCode);
   } catch (error) {
-    alert('❌ Erro ao criar sala: ' + error.message);
-    console.error(error);
+    console.error('❌ Erro detalhado:', error);
+    alert('❌ Erro ao criar sala!\n\n' +
+          'Possíveis causas:\n' +
+          '• O servidor backend não está rodando\n' +
+          '• Sem conexão com a internet\n' +
+          '• Problema na API\n\n' +
+          'Para jogar offline, use o modo "Jogo Local" no menu principal.\n\n' +
+          'Erro técnico: ' + error.message);
   }
 }
 

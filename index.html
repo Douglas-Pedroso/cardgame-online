@@ -48,7 +48,7 @@
             <p class="game-subtitle">Como você gostaria de jogar?</p>
             
             <div class="menu-buttons">
-                <button class="btn btn-primary btn-large mode-btn" onclick="showCreateGame()">
+                <button class="btn btn-primary btn-large mode-btn" onclick="showOnlineOptions()">
                     <i class="fas fa-wifi"></i>
                     <span>Modo Online</span>
                     <small>Jogue com um amigo via internet</small>
@@ -66,10 +66,35 @@
         </div>
     </div>
 
+    <!-- Tela de Opções Online -->
+    <div id="onlineOptionsScreen" class="screen">
+        <div class="menu-container">
+            <button class="btn-back" onclick="showGameModeSelection()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            
+            <h1 class="game-title">Modo Online</h1>
+            <p class="game-subtitle">Escolha uma opção</p>
+            
+            <div class="menu-buttons">
+                <button class="btn btn-success btn-large mode-btn" onclick="showCreateGame()">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Criar Nova Sala</span>
+                    <small>Crie uma sala e compartilhe o código</small>
+                </button>
+                <button class="btn btn-info btn-large mode-btn" onclick="showJoinGame()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Entrar na Sala</span>
+                    <small>Use o código para entrar em uma sala</small>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Tela de Criar Sala (Online) -->
     <div id="createGameScreen" class="screen">
         <div class="setup-container">
-            <button class="btn-back" onclick="showGameModeSelection()">
+            <button class="btn-back" onclick="showOnlineOptions()">
                 <i class="fas fa-arrow-left"></i> Voltar
             </button>
             
@@ -94,7 +119,7 @@
     <!-- Tela de Entrar na Sala (Online) -->
     <div id="joinGameScreen" class="screen">
         <div class="setup-container">
-            <button class="btn-back" onclick="showGameModeSelection()">
+            <button class="btn-back" onclick="showOnlineOptions()">
                 <i class="fas fa-arrow-left"></i> Voltar
             </button>
             
