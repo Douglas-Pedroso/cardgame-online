@@ -762,6 +762,7 @@ function criarElementoCarta(card, zone, index) {
   div.draggable = true;
   
   div.onmouseover = () => div.style.transform = 'scale(1.05)';
+  div.onmouseout = () => div.style.transform = 'scale(1)';
   
   // Clique para abrir menu de ações - usar addEventListener
   div.addEventListener('click', (e) => {
@@ -813,7 +814,7 @@ function criarElementoCarta(card, zone, index) {
   };
   
   // Info da carta sobre a imagem
-      img.src = imagePath;
+  const info = document.createElement('div');
   info.style.cssText = `
     position: absolute;
     bottom: 0;
