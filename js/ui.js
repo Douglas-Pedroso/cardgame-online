@@ -291,7 +291,9 @@ function renderizarJogo() {
   renderizarDeck();
   renderizarCartasBanidas();
   atualizarInfoJogador();
-  configurarDropZones();
+  if (typeof configurarDropZones === 'function') {
+    configurarDropZones();
+  }
 
   console.log('🎮 Jogo renderizado');
 }
@@ -644,10 +646,10 @@ function renderizarDeck() {
     cardBack.style.opacity = '1';
   });
   
-  // Adicionar clique para abrir a modal do deck
+  // Adicionar clique para abrir a modal do deck (modo online)
   cardBack.addEventListener('click', (e) => {
     e.stopPropagation();
-    viewPlayerDeck();
+    viewOnlineDeck();
   });
   
   container.appendChild(cardBack);
@@ -656,6 +658,66 @@ function renderizarDeck() {
   const countElement = document.getElementById('playerDeckCount');
   if (countElement) {
     countElement.textContent = gameState.deck.length;
+  }
+}
+
+// ========== VISUALIZADOR DE DECK (ONLINE) ==========
+function viewOnlineDeck() {
+  const modal = document.getElementById('deckViewerModal');
+  const content = document.getElementById('deckViewerContent');
+  if (!modal || !content) return;
+  
+  content.innerHTML = '';
+  
+  if (!gameState || !gameState.deck || gameState.deck.length === 0) {
+    content.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Deck vazio</div>';
+  } else {
+    gameState.deck.forEach((card, index) => {
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'card';
+      cardDiv.style.width = '100px';
+      cardDiv.style.height = '140px';
+      cardDiv.style.margin = '5px';
+      
+      // Encontrar o deck da carta
+      let deckName = 'florestal';
+      for (let d in DECKS) {
+        if (DECKS[d].cards.some(c => c.id === card.id)) {
+          deckName = d;
+          break;
+        }
+      }
+      
+      const imageFile = card.image ? card.image : `${card.id}.PNG`;
+      const imagePath = `assets/cards/${deckName}/${imageFile}`;
+      
+      cardDiv.innerHTML = `
+        <div class="card-image" style="background-image: url('${imagePath}'); background-size: cover; background-position: center; height: 100%; position: relative;"></div>
+      `;
+      cardDiv.title = `${card.name} - Arraste para qualquer zona`;
+      cardDiv.draggable = true;
+      cardDiv.ondragstart = (e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('card', JSON.stringify({cardId: card.id, zone: 'deck', cardName: card.name}));
+      };
+      
+      // Duplo clique para pegar
+      cardDiv.ondblclick = () => {
+        moverCartaPorId(card.id, 'deck', 'hand');
+        viewOnlineDeck();
+      };
+      
+      content.appendChild(cardDiv);
+    });
+  }
+  
+  modal.style.display = 'block';
+}
+
+function closeDeckViewer() {
+  const modal = document.getElementById('deckViewerModal');
+  if (modal) {
+    modal.style.display = 'none';
   }
 }
 
@@ -676,8 +738,9 @@ function criarElementoCarta(card, zone, index) {
     }
   }
   
-  // Usar o ID como nome do arquivo, que já tem o sufixo
-  const imagePath = `assets/cards/${deckName}/${card.id}.PNG`;
+  // Preferir a propriedade de imagem do card; fallback para ID
+  const imageFile = card.image ? card.image : `${card.id}.PNG`;
+  const imagePath = `assets/cards/${deckName}/${imageFile}`;
   
   div.style.cssText = `
     position: relative;
@@ -699,7 +762,6 @@ function criarElementoCarta(card, zone, index) {
   div.draggable = true;
   
   div.onmouseover = () => div.style.transform = 'scale(1.05)';
-  div.onmouseout = () => div.style.transform = 'scale(1)';
   
   // Clique para abrir menu de ações - usar addEventListener
   div.addEventListener('click', (e) => {
@@ -751,7 +813,7 @@ function criarElementoCarta(card, zone, index) {
   };
   
   // Info da carta sobre a imagem
-  const info = document.createElement('div');
+      img.src = imagePath;
   info.style.cssText = `
     position: absolute;
     bottom: 0;
@@ -1018,7 +1080,8 @@ function abrirModalZona(cartas, zone, titulo) {
         }
       }
       
-      img.src = `assets/cards/${deckName}/${card.id}.PNG`;
+      const imageFile = card.image ? card.image : `${card.id}.PNG`;
+      img.src = `assets/cards/${deckName}/${imageFile}`;
       img.style.cssText = 'width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);';
       img.onerror = () => {
         img.style.display = 'none';
