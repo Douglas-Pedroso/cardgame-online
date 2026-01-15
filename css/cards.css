@@ -77,13 +77,15 @@
 }
 
 .opponent-zone {
-  background: rgba(231, 76, 60, 0.1);
-  border-bottom: 2px solid rgba(231, 76, 60, 0.3);
+  background: linear-gradient(180deg, rgba(231, 76, 60, 0.15) 0%, rgba(192, 57, 43, 0.05) 100%);
+  border-bottom: 3px solid rgba(231, 76, 60, 0.5);
+  box-shadow: 0 4px 20px rgba(231, 76, 60, 0.2);
 }
 
 .player-zone {
-  background: rgba(39, 174, 96, 0.1);
-  border-top: 2px solid rgba(39, 174, 96, 0.3);
+  background: linear-gradient(0deg, rgba(39, 174, 96, 0.15) 0%, rgba(27, 140, 76, 0.05) 100%);
+  border-top: 3px solid rgba(39, 174, 96, 0.5);
+  box-shadow: 0 -4px 20px rgba(39, 174, 96, 0.2);
 }
 
 .zone-row {
@@ -94,22 +96,30 @@
 }
 
 .zone {
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.9) 100%);
   border-radius: 15px;
   padding: 10px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.zone:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), inset 0 0 25px rgba(255, 255, 255, 0.08);
 }
 
 .zone-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #ecf0f1;
   margin-bottom: 10px;
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .zone-content {
@@ -124,10 +134,11 @@
 
 /* ===== CAMPO DE JOGO ===== */
 .field-zone {
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.9) 100%);
   border-radius: 15px;
   padding: 15px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .field-slots {
@@ -139,55 +150,70 @@
 
 .field-slot {
   aspect-ratio: 2/3;
-  background: rgba(0, 0, 0, 0.05);
-  border: 2px dashed rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
+  background: #d3d3d3;
+  border: 2px dashed #999;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   cursor: pointer;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .field-slot:hover {
-  background: rgba(52, 152, 219, 0.1);
-  border-color: var(--color-secondary);
+  background: #e0e0e0;
+  border-color: #3498db;
+  box-shadow: 0 0 15px rgba(52, 152, 219, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
 }
 
 .field-slot.drag-over {
-  background: rgba(52, 152, 219, 0.2);
-  border-color: var(--color-secondary);
+  background: #c8e6ff;
+  border-color: #3498db;
   border-style: solid;
+  border-width: 3px;
+  box-shadow: 0 0 25px rgba(52, 152, 219, 0.7), inset 0 0 15px rgba(52, 152, 219, 0.2);
+  animation: pulseSlot 1s ease-in-out infinite;
+}
+
+@keyframes pulseSlot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 /* ===== CARTAS ===== */
 .card {
   width: 100px;
   height: 140px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(138, 43, 226, 0.3);
   cursor: grab;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  border: 2px solid #ddd;
+  border: 2px solid rgba(138, 43, 226, 0.5);
 }
 
 .card:hover {
-  transform: translateY(-5px) scale(1.05);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  transform: translateY(-8px) scale(1.08);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9), 0 0 30px rgba(138, 43, 226, 0.6), 0 0 50px rgba(138, 43, 226, 0.3);
   z-index: 100;
+  border-color: rgba(138, 43, 226, 0.9);
 }
 
 .card:active {
   cursor: grabbing;
+  transform: translateY(-5px) scale(1.03);
 }
 
 .card.dragging {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: grabbing;
+  transform: rotate(5deg) scale(0.95);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
 }
 
 .card-image {
@@ -234,34 +260,31 @@
 .card-back {
   width: 80px;
   height: 120px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('../assets/skins/igrith_portal.png');
+  background-size: cover;
+  background-position: center;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  color: white;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 0 20px rgba(138, 43, 226, 0.6), 0 0 40px rgba(138, 43, 226, 0.4);
   position: relative;
+  animation: cardGlow 3s ease-in-out infinite;
 }
 
-.card-back::before {
-  content: '🎴';
-  font-size: 3rem;
+@keyframes cardGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.6), 0 0 40px rgba(138, 43, 226, 0.4);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.8), 0 0 60px rgba(138, 43, 226, 0.6), 0 0 80px rgba(75, 0, 130, 0.4);
+    filter: brightness(1.2);
+  }
 }
 
 .card-count {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--color-primary);
-  color: white;
-  font-weight: 700;
-  font-size: 1.5rem;
-  padding: 10px 15px;
-  border-radius: 50%;
-  box-shadow: var(--shadow-md);
+  display: none;
 }
 
 /* ===== ZONA DE MÃO ===== */

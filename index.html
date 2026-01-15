@@ -18,32 +18,58 @@
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Tela de Menu -->
+    <!-- Tela de Menu Principal -->
     <div id="menuScreen" class="screen active">
         <div class="menu-container">
             <h1 class="game-title">🎴 Card Game Online</h1>
             <p class="game-subtitle">Jogo de Cartas Multiplayer</p>
             
             <div class="menu-buttons">
-                <button class="btn btn-primary" onclick="showCreateGame()">
-                    <i class="fas fa-plus"></i> Criar Sala
-                </button>
-                <button class="btn btn-secondary" onclick="showJoinGame()">
-                    <i class="fas fa-sign-in-alt"></i> Entrar na Sala
+                <button class="btn btn-primary" onclick="showGameModeSelection()">
+                    <i class="fas fa-gamepad"></i> Jogar
                 </button>
             </div>
             
             <div class="menu-info">
                 <p><i class="fas fa-info-circle"></i> Para 2 jogadores</p>
-                <p><i class="fas fa-wifi"></i> Requer conexão com internet</p>
+                <p><i class="fas fa-wifi"></i> Requer conexão com internet (modo online)</p>
             </div>
         </div>
     </div>
 
-    <!-- Tela de Criar Sala -->
+    <!-- Tela de Seleção de Modo de Jogo -->
+    <div id="gameModeScreen" class="screen">
+        <div class="menu-container">
+            <button class="btn-back" onclick="showMenu()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            
+            <h1 class="game-title">Selecione o Modo</h1>
+            <p class="game-subtitle">Como você gostaria de jogar?</p>
+            
+            <div class="menu-buttons">
+                <button class="btn btn-primary btn-large mode-btn" onclick="showCreateGame()">
+                    <i class="fas fa-wifi"></i>
+                    <span>Modo Online</span>
+                    <small>Jogue com um amigo via internet</small>
+                </button>
+                <button class="btn btn-secondary btn-large mode-btn" onclick="showOfflineGame()">
+                    <i class="fas fa-desktop"></i>
+                    <span>Modo Offline</span>
+                    <small>Jogue localmente (testes e prática)</small>
+                </button>
+            </div>
+            
+            <div class="menu-info">
+                <p><i class="fas fa-info-circle"></i> Modo Offline é perfeito para testes e prática</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Criar Sala (Online) -->
     <div id="createGameScreen" class="screen">
         <div class="setup-container">
-            <button class="btn-back" onclick="showMenu()">
+            <button class="btn-back" onclick="showGameModeSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar
             </button>
             
@@ -59,16 +85,16 @@
                 <div class="deck-grid" id="deckGridCreate"></div>
             </div>
             
-            <button class="btn btn-primary btn-large" onclick="createGame()">
+            <button class="btn btn-primary btn-large" onclick="executarCriarSala()">
                 <i class="fas fa-gamepad"></i> Criar Sala
             </button>
         </div>
     </div>
 
-    <!-- Tela de Entrar na Sala -->
+    <!-- Tela de Entrar na Sala (Online) -->
     <div id="joinGameScreen" class="screen">
         <div class="setup-container">
-            <button class="btn-back" onclick="showMenu()">
+            <button class="btn-back" onclick="showGameModeSelection()">
                 <i class="fas fa-arrow-left"></i> Voltar
             </button>
             
@@ -91,6 +117,45 @@
             
             <button class="btn btn-primary btn-large" onclick="joinGameButton()">
                 <i class="fas fa-sign-in-alt"></i> Entrar na Sala
+            </button>
+        </div>
+    </div>
+
+    <!-- Tela de Configuração de Jogo Offline -->
+    <div id="offlineGameScreen" class="screen">
+        <div class="setup-container">
+            <button class="btn-back" onclick="showGameModeSelection()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            
+            <h2>Modo Offline</h2>
+            
+            <div class="input-group">
+                <label for="offlinePlayer1Name">Nome do Jogador 1:</label>
+                <input type="text" id="offlinePlayer1Name" placeholder="Digite seu nome" maxlength="20" value="Jogador 1">
+            </div>
+            
+            <div class="input-group">
+                <label for="offlinePlayer1Deck">Deck do Jogador 1:</label>
+                <div class="deck-selection">
+                    <div class="deck-grid" id="deckGridOffline1"></div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="offlinePlayer2Name">Nome do Jogador 2:</label>
+                <input type="text" id="offlinePlayer2Name" placeholder="Digite o nome do oponente" maxlength="20" value="Jogador 2">
+            </div>
+            
+            <div class="input-group">
+                <label for="offlinePlayer2Deck">Deck do Jogador 2:</label>
+                <div class="deck-selection">
+                    <div class="deck-grid" id="deckGridOffline2"></div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary btn-large" onclick="startOfflineGame()">
+                <i class="fas fa-gamepad"></i> Iniciar Partida
             </button>
         </div>
     </div>
@@ -214,8 +279,8 @@
             </div>
             
             <div class="zone-row">
-                <div class="zone deck-zone">
-                    <div class="zone-label">Seu Deck</div>
+                <div class="zone deck-zone" onclick="viewPlayerDeck()">
+                    <div class="zone-label">Seu Deck (Clique para ver)</div>
                     <div class="zone-content" id="playerDeckZone">
                         <div class="card-back"></div>
                         <span class="card-count" id="playerDeckCount">20</span>
@@ -272,6 +337,15 @@
                 </button>
             </div>
             <div class="modal-body" id="modalCardList"></div>
+        </div>
+    </div>
+
+    <!-- Modal para visualizar Deck -->
+    <div id="deckViewerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; pointer-events: none;">
+        <div style="max-width: 900px; margin: 50px auto; background: #1a1a2e; border-radius: 10px; padding: 20px; position: relative; pointer-events: auto;">
+            <button onclick="closeDeckViewer()" style="position: absolute; top: 10px; right: 10px; background: #e74c3c; border: none; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 18px;">&times;</button>
+            <h2 style="color: white; margin-bottom: 20px;">📚 Visualizador de Deck - Arraste para qualquer zona</h2>
+            <div id="deckViewerContent" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
         </div>
     </div>
 

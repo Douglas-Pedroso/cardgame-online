@@ -10,13 +10,8 @@ let currentGame = {
   currentTurn: null
 };
 
-let gameState = {
-  hand: [],
-  field: [],
-  deck: [],
-  banished: [],
-  pressureLevel: 0
-};
+// NOTA: gameState é definido em game.js (fonte única de verdade)
+// Não duplicar aqui para evitar conflitos!
 
 let selectedDeck = null;
 
@@ -64,10 +59,9 @@ function joinGameButton() {
 
 function mostrarSelecaoDeck(tipo) {
   const decks = [
-    { id: 'aquatico', nome: 'Aquático', emoji: '🌊', cor: '#4A90E2' },
-    { id: 'planta', nome: 'Planta', emoji: '🌿', cor: '#7CB342' },
-    { id: 'fada', nome: 'Fada', emoji: '🧚', cor: '#E91E63' },
-    { id: 'cavaleiro', nome: 'Cavaleiro', emoji: '🏹', cor: '#FF6F00' }
+    { id: 'florestal', nome: 'Florestal', emoji: '🌲', cor: '#558B2F' },
+    { id: 'glacial', nome: 'Glacial', emoji: '❄️', cor: '#00BCD4' },
+    { id: 'terrana', nome: 'Terrana', emoji: '🏔️', cor: '#D2B48C' }
   ];
 
   let targetElement;
@@ -245,10 +239,10 @@ function mostrarTelaJogo() {
 function inicializarJogo() {
   // ⚠️ IMPORTANTE: Usar a variável selectedDeck que foi definida ao clicar no botão
   // Isso garante que cada jogador mantém sua própria seleção
-  const deckSelecionado = selectedDeck || localStorage.getItem('playerDeck') || 'aquatico';
+  const deckSelecionado = selectedDeck || localStorage.getItem('playerDeck') || 'florestal';
   console.log('📚 Inicializando jogo com deck:', deckSelecionado);
 
-  const deckCartas = DECKS[deckSelecionado]?.cards || DECKS['aquatico'].cards;
+  const deckCartas = DECKS[deckSelecionado]?.cards || DECKS['florestal'].cards;
   
   gameState = {
     hand: [
@@ -661,7 +655,7 @@ function criarElementoCarta(card, zone, index) {
   div.dataset.cardZone = zone;
   
   // Determinar qual deck a carta vem (baseado no gameState ou décks conhecidos)
-  let deckName = 'aquatico'; // padrão
+  let deckName = 'florestal'; // padrão
   for (let d in DECKS) {
     if (DECKS[d].cards.some(c => c.id === card.id)) {
       deckName = d;
@@ -1003,7 +997,7 @@ function abrirModalZona(cartas, zone, titulo) {
       const img = document.createElement('img');
       
       // Encontrar o deck da carta
-      let deckName = 'aquatico';
+      let deckName = 'florestal';
       for (let d in DECKS) {
         if (DECKS[d].cards.some(c => c.id === card.id)) {
           deckName = d;
